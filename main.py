@@ -1,17 +1,18 @@
 import logging
 import datetime
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types, Router, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client import telegram
 import aiohttp
+import json
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.utils.token import TokenValidationError
 
-from aiogram import Router, F
+#from aiogram import Router, F
 from aiogram.types import Message
 from keyboards.client_kb import (
     kb_client, spec_client, pol_client, menu_client, ident_client, choise_client
@@ -47,7 +48,7 @@ bot = Bot(token=bot_token, session=session)
 dp = Dispatcher()
 
 # Версия и создатель
-version = '2.2.1 release'
+version = '2.2.2 release'
 creator = '@rapot'
 
 # Состояния
@@ -85,6 +86,76 @@ class ClientRequests(StatesGroup):
     cancel_doctor = State()
     cancel_home = State()
     question_cancel_doctor = State()
+
+
+# Путь к JSON-файлу
+JSON_FILE = "bot_data.json"
+
+
+# Определение состояний
+class UserState(StatesGroup):
+    waiting_for_input = State()
+
+
+# Функция для загрузки данных из JSON
+def load_data():
+    try:
+        with open(JSON_FILE, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+# Функция для сохранения данных в JSON
+def save_data(data):
+    with open(JSON_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
+# Команда /begin
+@dp.message(Command("begin"))
+async def start_process(message: Message, state: FSMContext):
+    user_id = str(message.from_user.id)
+
+    # Устанавливаем состояние
+    await state.set_state(UserState.waiting_for_input)
+
+    # Сохраняем состояние в JSON
+    data = load_data()
+    data[user_id] = {"state": "waiting_for_input", "data": {}}
+    save_data(data)
+
+    await message.reply("Введите данные:")
+
+
+# Обработка ввода в состоянии waiting_for_input
+@dp.message(StateFilter(UserState.waiting_for_input))
+async def process_input(message: Message, state: FSMContext):
+    user_id = str(message.from_user.id)
+
+    await message.reply(f"Вы ввели: {message.text}")
+    await state.clear()  # Завершаем состояние
+
+    # Удаляем пользователя из JSON после завершения
+    data = load_data()
+    if user_id in data:
+        del data[user_id]
+    save_data(data)
+
+
+# Хук при запуске
+async def on_startup():
+    print("Бот запущен!")
+    data = load_data()
+
+    # Восстанавливаем состояния из JSON
+    for user_id, user_data in data.items():
+        state_name = user_data.get("state")
+        if state_name == "waiting_for_input":
+            await dp.storage.set_state(user=user_id, state=UserState.waiting_for_input)
+            await dp.storage.set_data(user=user_id, data=user_data.get("data", {}))
+            await bot.send_message(user_id, "Бот перезапустился, продолжаем работу! Введите данные:")
+
 
 
 # Обработчик команды /start
@@ -148,6 +219,12 @@ async def return_to_main_menu(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer('Выберите раздел:', reply_markup=kb_client)
     logger.info("Пользователь возвращён в главное меню")
+
+
+@dp.message(F.text == 'вернуться в меню')
+async def return_to_menu(message: types.Message, state: FSMContext):
+    await state.clear()  # Сбрасываем состояние
+    await message.answer("Вы вернулись в главное меню.", reply_markup=kb_client)
 
 
 # Обработчик текстового сообщения "ВЫЗОВ ВРАЧА НА ДОМ"
@@ -325,7 +402,7 @@ async def polyclinic_4(message: types.Message, state: FSMContext):
 
 @dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ')
 async def cancel_command(message: types.Message, state: FSMContext):
-    await bot.send_message(message.from_id, 'Введите свой полис ОМС: ', reply_markup=menu_client)
+    await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ', reply_markup=menu_client)
     await state.set_state(ClientRequests.checking)
 
 
@@ -335,75 +412,82 @@ async def cancel_command(message: types.Message, state: FSMContext):
 @dp.message(ClientRequests.checking)
 async def checking(message: types.Message, state: FSMContext):
     mess = message.text
-    print(mess)
+    logger.info(f"Получено сообщение: {mess}")
+
+    # Обработка команды "вернуться в меню"
     if mess == 'вернуться в меню':
-        print('+вернуться в главное меню+')
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        spec_dict_final = {}
-        await state.clear()
+        logger.info("Пользователь вернулся в главное меню")
+        await return_to_main_menu(message, state)
+        return
 
-    elif mess.isdigit() == False:
-        await message.reply('Неверный ввод, вводите только цифры, без символов и пробелов')
+    # Проверка, что введены только цифры
+    if not mess.isdigit():
+        await message.reply('Неверный ввод. Вводите только цифры, без символов и пробелов.')
+        return
 
-    elif len(mess) != 16:
-        await message.reply('Неверный ввод, введите 16 цифр номера полиса')
+    # Проверка длины номера полиса
+    if len(mess) != 16:
+        await message.reply('Неверный ввод. Номер полиса должен содержать 16 цифр.')
+        return
 
-    else:
+    # Поиск данных по полису
+    logger.info("Поиск данных по полису...")
+    polis_data = search_polis.search_polis(mess)
 
-        print('отмена')
-        polis_data = search_polis.search_polis(mess)
-        print(polis_data)
+    if not polis_data['data']:
+        logger.warning("Полис не найден")
+        await message.reply('Неверный ввод. Такого полиса не существует.')
+        return
 
-        if polis_data['data'] == []:
-            print('такого полиса не существует')
-            await message.reply('Неверный ввод, такого полиса не существует')
-        else:
+    # Получение данных о человеке
+    person_id = polis_data['data'][0]['Person_id']
+    person_data = search_person.search_person(person_id)
 
-            print(polis_data['data'][0]['Polis_id'])
-            person_data = search_person.search_person(polis_data['data'][0]['Person_id'])
-            print(person_data)
-            person_id = person_data['data'][0]['Person_id']
-            entry_data = entry_status.entry_status(person_id)
+    if not person_data['data']:
+        logger.error("Данные о человеке не найдены")
+        await message.reply('Ошибка: данные о человеке не найдены.')
+        return
 
-            print(f' entry_ data: {entry_data}')
+    # Получение данных о записях
+    entry_data = entry_status.entry_status(person_id)
 
-            if entry_data['data']['TimeTable'] == []:
-                print('ничего нет')
-                await bot.send_message(message.chat.id, 'ЗАПИСЕЙ НА ПРИЁМ НЕ НАЙДЕНО')
-                await state.set_state(ClientRequests.main_menu)
-                await message.reply('выберите раздел', reply_markup=kb_client)
-                spec_dict_final = {}
-                await state.clear()
+    if not entry_data['data']['TimeTable']:
+        logger.info("Записей на приём не найдено")
+        await message.reply('Записей на приём не найдено.')
+        await return_to_main_menu(message, state)
+        return
 
+    # Отображение информации о записях
+    for key in entry_data['data']['TimeTable']:
+        name = key['Post_name']
+        time = key['TimeTable_begTime']
+        id = key['TimeTable_id']
+        await message.answer(
+            f'Вы записаны к: {name}\n'
+            f'На время: {time}\n'
+            f'ID бирки: `{id}`',
+            parse_mode="Markdown"
+        )
 
-            else:
-                for key in entry_data['data']['TimeTable']:
-                    name = key['Post_name']
-                    time = key['TimeTable_begTime']
-                    id = key['TimeTable_id']
-                    await bot.send_message(message.chat.id, f' ВЫ ЗАПИСАНЫ к: {name}\n на: {time}\n')
-                    await bot.send_message(message.chat.id, f" ID бирки: `{id}`", parse_mode="Markdown")
-                    await state.set_state(ClientRequests.main_menu)
-                    await bot.send_message(message.chat.id, 'выберите раздел', reply_markup=kb_client)
-                    spec_dict_final = {}
-                    await state.clear()
-
+    # Возврат в главное меню
+    await return_to_main_menu(message, state)
 
 @dp.message(F.text == 'ОТМЕНА ЗАПИСИ')
 async def cancel_command(message: types.Message):
-    @dp.message(F.text == 'ОТМЕНА ЗАПИСИ К ВРАЧУ')
-    async def spec_command(message: types.Message, state: FSMContext):
-        await bot.send_message(message.from_id, 'Введите свой полис ОМС: ', reply_markup=menu_client)
-        print('ОТМЕНА ЗАПИСИ К ВРАЧУ')
-        await state.set_state(ClientRequests.cancel_doctor)
+    await message.answer('Выберите раздел:', reply_markup=choise_client)
 
-    @dp.message(F.text == 'ОТМЕНА ЗАПИСИ ВЫЗОВА НА ДОМ')
-    async def spec_command(message: types.Message, state: FSMContext):
-        await message.reply('Отменить вызов врача на дом невозможно, ожидайте звонка оператора', reply_markup=kb_client)
-        await state.clear()
+@dp.message(F.text == 'ОТМЕНА ЗАПИСИ К ВРАЧУ')
+async def cancel_doctor_command(message: types.Message, state: FSMContext):
+    await message.answer('Введите свой полис ОМС:', reply_markup=menu_client)
+    logger.info('ОТМЕНА ЗАПИСИ К ВРАЧУ')
+    await state.set_state(ClientRequests.cancel_doctor)
 
+@dp.message(F.text == 'ОТМЕНА ЗАПИСИ ВЫЗОВА НА ДОМ')
+async def cancel_home_command(message: types.Message, state: FSMContext):
+    await message.answer('Отменить вызов врача на дом невозможно. Ожидайте звонка оператора.', reply_markup=kb_client)
+    await state.clear()
+    await return_to_main_menu(message, state)
 
-    await bot.send_message(message.from_id, 'Выберите раздел: ', reply_markup=choise_client)
 
 
 @dp.message(ClientRequests.cancel_home)
@@ -418,12 +502,12 @@ async def cancel_command(message: types.Message, state: FSMContext):
         await state.clear()
 
     elif status_home_delete['error_code'] == 0:
-        await bot.send_message(message.from_id, 'Вызов на дом ОТМЕНЁН', reply_markup=menu_client)
+        await bot.send_message(message.from_user.id, 'Вызов на дом ОТМЕНЁН', reply_markup=menu_client)
         await message.reply('выберите раздел', reply_markup=kb_client)
         await state.clear()
 
     elif status_home_delete['error_code'] == 6:
-        await bot.send_message(message.from_id, 'Неверный идентификатор', reply_markup=menu_client)
+        await bot.send_message(message.from_user.id, 'Неверный идентификатор', reply_markup=menu_client)
 
 
     else:
@@ -432,105 +516,104 @@ async def cancel_command(message: types.Message, state: FSMContext):
 
 @dp.message(ClientRequests.cancel_doctor)
 async def checking(message: types.Message, state: FSMContext):
-    await bot.send_message(message.from_id, 'Идёт поиск, подождите ', reply_markup=menu_client)
+    await message.answer('Идёт поиск, подождите...', reply_markup=menu_client)
     mess = message.text
-    print(mess)
+    logger.info(f"Получено сообщение: {mess}")
 
+    # Обработка команды "вернуться в меню"
     if mess == 'вернуться в меню':
-        print('+вернуться в главное меню+')
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        spec_dict_final = {}
-        await state.clear()
+        logger.info("Пользователь вернулся в главное меню")
+        await return_to_main_menu(message, state)
+        return
 
-    elif mess.isdigit() == False:
-        await message.reply('Неверный ввод, вводите только цифры, без символов и пробелов')
+    # Проверка, что введены только цифры
+    if not mess.isdigit():
+        await message.reply('Неверный ввод. Вводите только цифры, без символов и пробелов.')
+        return
 
-    elif len(mess) != 16:
-        await message.reply('Неверный ввод, введите 16 цифр номера полиса')
+    # Проверка длины номера полиса
+    if len(mess) != 16:
+        await message.reply('Неверный ввод. Номер полиса должен содержать 16 цифр.')
+        return
 
+    # Поиск данных по полису
+    logger.info("Поиск данных по полису...")
+    polis_data = search_polis.search_polis(mess)
+
+    if not polis_data['data']:
+        logger.warning("Полис не найден")
+        await message.reply('Неверный ввод. Такого полиса не существует.')
+        return
+
+    # Получение данных о человеке
+    person_id = polis_data['data'][0]['Person_id']
+    person_data = search_person.search_person(person_id)
+
+    if not person_data['data']:
+        logger.error("Данные о человеке не найдены")
+        await message.reply('Ошибка: данные о человеке не найдены.')
+        return
+
+    # Получение данных о записях
+    entry_data = entry_status.entry_status(person_id)
+    await state.update_data(entry_data_delete=entry_data)
+
+    if not entry_data['data']['TimeTable']:
+        logger.info("Записей на приём не найдено")
+        await message.answer('ЗАПИСЕЙ НА ПРИЁМ НЕ НАЙДЕНО.')
+        await return_to_main_menu(message, state)
+        return
+
+    # Отображение информации о записях
+    for key in entry_data['data']['TimeTable']:
+        name = key['Post_name']
+        time = key['TimeTable_begTime']
+        id = key['TimeTable_id']
+        await message.answer(
+            f'Вы записаны к: {name}\n'
+            f'На время: {time}\n'
+            f'ID бирки: `{id}`',
+            parse_mode="Markdown"
+        )
+
+    # Запрос ID бирки для отмены
+    await message.answer('Если желаете отменить запись, введите ID бирки:', reply_markup=menu_client)
+    await state.set_state(ClientRequests.entry_delete)
+
+@dp.message(ClientRequests.entry_delete)
+async def get_delete(message: types.Message, state: FSMContext):
+    message_delete = message.text
+    logger.info(f"Получено сообщение для отмены: {message_delete}")
+
+    # Обработка команды "вернуться в меню"
+    if message_delete == 'вернуться в меню':
+        logger.info("Пользователь вернулся в главное меню")
+        await return_to_main_menu(message, state)
+        return
+
+    # Проверка, что введены только цифры
+    if not message_delete.isdigit():
+        await message.reply('Неверный ввод. Вводите только цифры, без символов и пробелов.', reply_markup=menu_client)
+        return
+
+    # Отмена записи
+    data = await state.get_data()
+    entry_data = data.get('entry_data_delete')
+    del_status = del_entry(message_delete, entry_data)
+    logger.info(f"Результат отмены записи: {del_status}")
+
+    if del_status == '0':
+        await message.answer('БИРКА УДАЛЕНА.', reply_markup=kb_client)
+        await return_to_main_menu(message, state)
+    elif del_status == '6':
+        await message.answer('Бирка не найдена. Повторите ввод.', reply_markup=menu_client)
     else:
+        await message.answer('Неверный ID бирки. Повторите попытку.', reply_markup=menu_client)
 
-        print('отмена')
-        polis_data = search_polis.search_polis(mess)
-        print(polis_data)
-
-        if polis_data['data'] == []:
-            print('такого полиса не существует')
-            await message.reply('Неверный ввод, такого полиса не существует')
-        else:
-
-            print(polis_data['data'][0]['Polis_id'])
-            person_data = search_person.search_person(polis_data['data'][0]['Person_id'])
-            print(person_data)
-            person_id = person_data['data'][0]['Person_id']
-            entry_data = entry_status.entry_status(person_id)
-            await state.update_data(entry_data_delete=entry_data)
-
-            print(f' entry_data: {entry_data}')
-
-            if entry_data['data']['TimeTable'] == []:
-                print('ничего нет')
-                await bot.send_message(message.chat.id, 'ЗАПИСЕЙ НА ПРИЁМ НЕ НАЙДЕНО')
-                await state.set_state(ClientRequests.main_menu)
-                await message.reply('выберите раздел', reply_markup=kb_client)
-                spec_dict_final = {}
-                await state.clear()
-
-            else:
-                for key in entry_data['data']['TimeTable']:
-                    name = key['Post_name']
-                    time = key['TimeTable_begTime']
-                    id = key['TimeTable_id']
-                    await bot.send_message(message.chat.id, f' ВЫ ЗАПИСАНЫ к: {name}\n на: {time}\n')
-                    await bot.send_message(message.chat.id, f" ID бирки: `{id}`", parse_mode="Markdown")
-                # TODO тут было дублирование
-                await bot.send_message(message.chat.id, 'Если желаете отменить запись введите ID бирки:',
-                                       reply_markup=menu_client)
-                await state.set_state(ClientRequests.entry_delete)
-
-        @dp.message(state=ClientRequests.entry_delete)
-        async def get_delete(message: types.Message, state: FSMContext):
-            message_delete = message.text
-            print(f' message_delete: {message_delete}')
-
-            if message_delete == 'вернуться в меню':
-                await state.set_state(ClientRequests.main_menu)
-                await message.reply('выберите раздел', reply_markup=kb_client)
-                spec_dict_final = {}
-                await state.clear()
-
-            elif message_delete.isdigit() == False:
-                await message.reply('Неверный ввод, вводите только цифры, без символов и пробелов',
-                                    reply_markup=menu_client)
-            # print(Post_name)
-            # TODO тут проверить
-            elif message_delete.isdigit() == True:
-                data = await state.get_data()
-                entry_data = data.get('entry_data_delete')
-                del_status = del_entry(message_delete, entry_data)
-                print(f' на выходе del_status: {del_status}')
-                if del_status == '0':
-                    await bot.send_message(message.chat.id, 'БИРКА УДАЛЕНА', reply_markup=kb_client)
-                    await state.set_state(ClientRequests.main_menu)
-                    # await bot.send_message(message.chat.id, 'выберите раздел', reply_markup=kb_client)
-                    spec_dict_final = {}
-                    await state.clear()
-                elif del_status == '6':
-                    await bot.send_message(message.chat.id, 'бирка не найдена, повторите ввод')
-
-
-
-
-            elif message_delete == 'НЕТ':
-
-                await state.set_state(ClientRequests.main_menu)
-                await message.reply('выберите раздел', reply_markup=kb_client)
-                spec_dict_final = {}
-                await state.clear()
-                # await ClientRequests.next()
-
-            else:
-                await bot.send_message(message.chat.id, 'Неверный бирка, повторите попытку', reply_markup=menu_client)
+async def return_to_main_menu(message: types.Message, state: FSMContext):
+    await state.clear()
+    await message.answer('Выберите раздел:', reply_markup=kb_client)
+    logger.info("Пользователь возвращён в главное меню")
 
 
 def del_entry(message_delete, entry_data):
@@ -635,7 +718,7 @@ async def get_spec(message: types.Message, state: FSMContext):
             # print(post_id)
 
             if data_lpu_person == []:
-                await bot.send_message(message.from_id,
+                await bot.send_message(message.from_user.id,
                                        'К данному специалисту запись на 5 ближайших дней отсутствует',
                                        reply_markup=kb_client)
                 await state.set_state(ClientRequests.main_menu)
@@ -701,7 +784,7 @@ async def get_doctor(message: types.Message, state: FSMContext):
         await state.clear()
 
     else:
-        await bot.send_message(message.from_id,
+        await bot.send_message(message.from_user.id,
                                'Идёт поиск сводных дат для записи, это может занять много времени, пожалуйста ожидайте..')
         global MedStaffFact_id
 
@@ -718,28 +801,31 @@ async def get_doctor(message: types.Message, state: FSMContext):
         data_time_final = search_time.search_time(MedStaffFact_id, data_date_dict)
         print(f' data_time_final = {data_time_final}')
 
-        if data_time_final == []:
-            await bot.send_message(message.from_id,
-                                   'На ближажшие 4 дня нет свободных дат к данному специалисту')
-            await state.set_state(ClientRequests.main_menu)
-            await message.reply('выберите раздел', reply_markup=kb_client)
-            spec_dict_final = {}
-            await state.clear()
-
+        if not data_time_final:
+            # Если свободных дат нет
+            await message.answer('На ближайшие 4 дня нет свободных дат к данному специалисту.')
+            await return_to_main_menu(message, state)
         else:
-            data_button = ReplyKeyboardMarkup(resize_keyboard=True)
-            data_button.add(menu)
-            # цикл бигелова
+            # Создаем клавиатуру с датами
+            builder = ReplyKeyboardBuilder()
             for i in data_time_final:
-                # print(i['TimeTableGraf_begTime'])
-                data_button.add(i['TimeTableGraf_begTime'])
+                builder.add(KeyboardButton(text=i['TimeTableGraf_begTime']))
+            builder.adjust(2)  # Группируем кнопки по 2 в строке
 
-            await bot.send_message(message.from_id,
-                                   'На ближажшие 4 дня есть следующие свободные даты:\n'
-                                   'Выберите желаемую дату приёма', reply_markup=data_button)
+            # Добавляем кнопку "вернуться в меню"
+            builder.row(KeyboardButton(text="вернуться в меню"))
+
+            # Отправляем сообщение с клавиатурой
+            await message.answer(
+                'На ближайшие 4 дня есть следующие свободные даты:\n'
+                'Выберите желаемую дату приёма:',
+                reply_markup=builder.as_markup(resize_keyboard=True)
+            )
             await state.set_state(ClientRequests.time)
 
-            print(f' 1 MedStaffFact_id: {MedStaffFact_id}')
+            # Логирование
+            logger.info(f"MedStaffFact_id: {MedStaffFact_id}")
+
 
 
 @dp.message(ClientRequests.time)
@@ -755,7 +841,7 @@ async def get_person_time(message: types.Message, state: FSMContext):
         await state.clear()
 
     else:
-        await bot.send_message(message.from_id, 'Проверка возможности записи, ожидайте')
+        await bot.send_message(message.from_user.id, 'Проверка возможности записи, ожидайте')
         global data_time_final
         data = await state.get_data()
         MedStaffFact_id = data.get('MedStaffFact_id')
@@ -772,7 +858,7 @@ async def get_person_time(message: types.Message, state: FSMContext):
         await state.update_data(message_time=message_time)
         # TimeTableGraf_id
 
-        await bot.send_message(message.from_id, 'Введите свой полис ОМС: ',
+        await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ',
                                reply_markup=menu_client)
         await state.set_state(ClientRequests.person)
 
@@ -799,7 +885,7 @@ async def get_person_polis(message: types.Message, state: FSMContext):
 
 
     elif message_polis.isdigit() == True:
-        await bot.send_message(message.from_id, 'Идёт поиск, подождите ',
+        await bot.send_message(message.from_user.id, 'Идёт поиск, подождите ',
                                reply_markup=menu_client)
         polis_data = search_polis.search_polis(message_polis)
         print(f' polis_num из функции: {polis_data}')
@@ -847,7 +933,7 @@ async def get_person_polis(message: types.Message, state: FSMContext):
             f' Отчество: {PersonSecName_SecName}\n'
             f' Дата рождения: {PersonBirthDay_BirthDay}\n')
 
-        await bot.send_message(message.from_id, 'Это Вы ?', reply_markup=ident_client)
+        await bot.send_message(message.from_user.id, 'Это Вы ?', reply_markup=ident_client)
 
         await state.set_state(ClientRequests.entry)
 
@@ -890,7 +976,7 @@ async def get_person(message: types.Message, state: FSMContext):
             entry_data = search_entry.search_entry(person_id, TimeTableGraf_id)
             print(f' entry_data: {entry_data}')
             logging.info(f' ЗАПИСЬ {entry_data}')
-            await bot.send_message(message.from_id,
+            await bot.send_message(message.from_user.id,
                                    f" ВЫ УСПЕШНО ЗАПИСАНЫ к:"
                                    f" {entry_data[1]['data']['TimeTable'][0]['Post_name']}"
                                    f" на: {entry_data[1]['data']['TimeTable'][0]['TimeTable_begTime']}\n"
@@ -903,14 +989,14 @@ async def get_person(message: types.Message, state: FSMContext):
 
 
         else:
-            await bot.send_message(message.from_id,
+            await bot.send_message(message.from_user.id,
                                    f' возникла какая-то ошибка, сообщите о пробеме @rapot'
                                    f' или попытайтесь позже', reply_markup=menu_client)
 
     elif message_entry == 'НЕТ':
 
         await state.set_state(ClientRequests.main_menu)
-        await bot.send_message(message.from_id, 'выберите раздел',
+        await bot.send_message(message.from_user.id, 'выберите раздел',
                                reply_markup=kb_client)
         spec_dict_final = {}
         await state.clear()
@@ -931,7 +1017,8 @@ changelog = 'реализована отмена'
 
 # Запуск бота
 async def main():
-    await dp.start_polling(bot)
+    dp.startup.register(on_startup)
+    await dp.start_polling(bot, skip_updates=True)
 
 if __name__ == '__main__':
     import asyncio

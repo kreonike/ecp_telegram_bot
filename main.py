@@ -49,7 +49,7 @@ bot = Bot(token=bot_token, session=session)
 dp = Dispatcher()
 
 # Версия и создатель
-version = '2.2.4 release'
+version = '2.3.6 release'
 creator = '@rapot'
 
 # Состояния
@@ -633,14 +633,17 @@ async def get_spec(message: types.Message, state: FSMContext):
             print(data_lpu_person_old)
             for key in data_lpu_person_old:
                 # print(key)
-                if key['Post_id'] != '520101000000049' and key[
-                    'Person_id'] != '5656886' and \
-                        key['Person_id'] != '7611212' and key['Person_id'] != '10168043' \
+                if key['Post_id'] != '520101000000049' and key['Person_id'] != '5656886' \
+                        and key['Person_id'] != '7611212' and key['Person_id'] != '10168043' \
                         and key['Person_id'] != '5570722' and key['Person_id'] != '7409255' \
                         and key['Person_id'] != '7511183' and key['Person_id'] != '9827128' \
                         and key['Person_id'] != '9901773' and key['Person_id'] != '9931987' \
                         and key['Person_id'] != '10362016' and key['Person_id'] != '7437558' \
-                        and key['Person_id'] != '5656924' and key['Person_id'] != '7193169':
+                        and key['Person_id'] != '5656924' and key['Person_id'] != '7193169' \
+                        and key['MedStaffFact_id'] != '520101000104670' and key['MedStaffFact_id'] != '520101000104362' \
+                        and key['MedStaffFact_id'] != '520101000060459' and key['MedStaffFact_id'] != '520101000063947' \
+                        and key['MedStaffFact_id'] != '520101000138375' \
+                        and key['RecType_id'] == '1':
                     data_lpu_person.append(key)
                     # print(key)
 
@@ -756,7 +759,7 @@ async def get_doctor(message: types.Message, state: FSMContext):
 
         if not data_time_final:
             # Если свободных дат нет
-            await message.answer('На ближайшие 4 дня нет свободных дат к данному специалисту.')
+            await message.answer('На ближайшие 14 дней нет свободных дат к данному специалисту.')
             await return_to_main_menu(message, state)
         else:
 
@@ -779,7 +782,7 @@ async def get_doctor(message: types.Message, state: FSMContext):
 
             # Отправляем сообщение с клавиатурой
             await message.answer(
-                'На ближайшие 4 дня есть следующие свободные даты:\n'
+                'На ближайшие 14 дня есть следующие свободные даты:\n'
                 'Выберите желаемую дату приёма:',
                 reply_markup=builder.as_markup(resize_keyboard=True)
             )

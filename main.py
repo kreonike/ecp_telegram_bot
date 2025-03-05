@@ -1,28 +1,19 @@
 import logging
-import datetime
-from aiogram import Bot, Dispatcher, types, Router, F
-from aiogram.filters import Command, StateFilter
+
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.client import telegram
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.redis import RedisStorage  # Импортируем RedisStorage
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.client import telegram
-import aiohttp
-import json
-import redis
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from aiogram.utils.token import TokenValidationError
-from aiogram.fsm.storage.base import StorageKey
 
-import home_status
-from keyboards.client_kb import (
-    kb_client, spec_client, pol_client, menu_client, ident_client, choise_client, check_client
-)
-from config import bot_token
 import base_ecp
 import entry_home
 import entry_status
+import home_delete
+import home_status
 import search_date
 import search_entry
 import search_person
@@ -31,7 +22,10 @@ import search_spec_doctor
 import search_time
 import search_time2
 import time_delete
-import home_delete
+from config import bot_token
+from keyboards.client_kb import (
+    kb_client, spec_client, pol_client, menu_client, ident_client, choise_client, check_client
+)
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -91,7 +85,6 @@ class ClientRequests(StatesGroup):
     question_cancel_doctor = State()
     checking_home = State()
 
-# Обработчик команды /start
 @dp.message(Command("start"))
 async def start_command(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -727,28 +720,14 @@ async def get_spec(message: types.Message, state: FSMContext):
                     # Разбиваем список на группы по 3 элемента
                     rows = [list(spec_dict_final.keys())[i:i + 3] for i in range(0, len(spec_dict_final), 3)]
 
-                    # Создаем клавиатуру
                     keyboard = [
                         [KeyboardButton(text=key) for key in row]  # Создаем ряд кнопок
                         for row in rows  # Для каждой группы из 3 элементов
                     ]
 
-                    # Возвращаем клавиатуру
                     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
-                # Пример использования
                 doc = create_doc_keyboard()
-
-
-                # # Способ 1: Использование ReplyKeyboardMarkup
-                # doc = ReplyKeyboardMarkup(
-                #     keyboard=[
-                #         [KeyboardButton(text=key)] for key in spec_dict_final  # Кнопки для врачей
-                #     ],
-                #     resize_keyboard=True
-                # )
-
-                # Добавляем кнопку "вернуться в меню" в начало списка
                 doc.keyboard.insert(0, [KeyboardButton(text="вернуться в меню")])
 
                 # Отправляем сообщение с клавиатурой
@@ -765,13 +744,6 @@ async def get_spec(message: types.Message, state: FSMContext):
 async def get_doctor(message: types.Message, state: FSMContext):
     global spec_dict_final
     print('test test test')
-    # data = await state.get_data()
-    # spec_dict_final = data.get('spec_dict_final')
-    print(spec_dict_final)
-    # await message.reply('К кому хотим записаться ?', reply_markup=doc)
-    # global spec_dict_final
-    # print(post_id)
-
     print(f't2: {spec_dict_final}')
 
     mess = message.text
@@ -819,9 +791,7 @@ async def get_doctor(message: types.Message, state: FSMContext):
             # Группируем все кнопки ниже "вернуться в меню" по 2 в строке
             builder.adjust(1, 2)  # Первый ряд (1 кнопка), остальные по 2
 
-            # Получаем готовую клавиатуру
             markup = builder.as_markup(resize_keyboard=True)
-
             keyboard = builder.as_markup(resize_keyboard=True)
 
             # Отправляем сообщение с клавиатурой
@@ -865,8 +835,6 @@ async def get_person_time(message: types.Message, state: FSMContext):
         await state.update_data(time=message_time)
         await state.update_data(TimeTableGraf_id=TimeTableGraf_id)
         await state.update_data(message_time=message_time)
-        # TimeTableGraf_id
-
         await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ',
                                reply_markup=menu_client)
         await state.set_state(ClientRequests.person)
@@ -919,8 +887,7 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         global check_error
         check_error = 0
         for j in check_entry_data['data']['TimeTable']:
-            if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[
-                0] == date_whithout_time:
+            if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[0] == date_whithout_time:
                 print('НАЙДЕНО СОВПАДЕНИЕ')
                 print('запись к одному и тому же специалисту на один и тот же день запрещена')
                 check_error = 6
@@ -958,7 +925,7 @@ async def get_person(message: types.Message, state: FSMContext):
         await message.reply('выберите раздел', reply_markup=kb_client)
         spec_dict_final = {}
         await state.clear()
-        # await ClientRequests.next()
+
 
     elif message_entry == 'ДА':
         print(check_error)

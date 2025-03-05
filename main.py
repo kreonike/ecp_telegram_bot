@@ -759,20 +759,22 @@ async def get_doctor(message: types.Message, state: FSMContext):
             await message.answer('На ближайшие 4 дня нет свободных дат к данному специалисту.')
             await return_to_main_menu(message, state)
         else:
-            # Создаем клавиатуру
+
             builder = ReplyKeyboardBuilder()
 
-            # Добавляем кнопку "вернуться в меню" наверху
+            # Добавляем кнопку "вернуться в меню" наверху (на всю ширину ряда)
             builder.row(KeyboardButton(text="вернуться в меню"))
 
-            # Добавляем остальные кнопки
+            # Добавляем остальные кнопки из data_time_final
             for i in data_time_final:
                 builder.add(KeyboardButton(text=i['TimeTableGraf_begTime']))
 
-            # Группируем кнопки по 2 в строке (кроме кнопки "вернуться в меню")
-            builder.adjust(3)
+            # Группируем все кнопки ниже "вернуться в меню" по 2 в строке
+            builder.adjust(1, 2)  # Первый ряд (1 кнопка), остальные по 2
 
-            # Получаем клавиатуру
+            # Получаем готовую клавиатуру
+            markup = builder.as_markup(resize_keyboard=True)
+
             keyboard = builder.as_markup(resize_keyboard=True)
 
             # Отправляем сообщение с клавиатурой

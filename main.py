@@ -4,23 +4,20 @@ from aiogram import Bot, Dispatcher, types, Router, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.redis import RedisStorage  # Импортируем RedisStorage
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client import telegram
 import aiohttp
 import json
+import redis
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.utils.token import TokenValidationError
-
-#from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.fsm.storage.base import StorageKey
 from keyboards.client_kb import (
     kb_client, spec_client, pol_client, menu_client, ident_client, choise_client
 )
 from config import bot_token
-router = Router()
-
-# Импортируем ваши модули
 import base_ecp
 import entry_home
 import entry_status
@@ -43,12 +40,16 @@ session = AiohttpSession(
 )
 
 
+# Инициализация RedisStorage
+#redis_storage = RedisStorage.from_url('redis://95.79.40.128:6379/0')  # Укажите ваш Redis URL
+
 # Инициализация бота и диспетчера
 bot = Bot(token=bot_token, session=session)
+#dp = Dispatcher(storage=redis_storage)  # Используем RedisStorage
 dp = Dispatcher()
 
 # Версия и создатель
-version = '2.2.2 release'
+version = '2.2.4 release'
 creator = '@rapot'
 
 # Состояния
@@ -87,88 +88,23 @@ class ClientRequests(StatesGroup):
     cancel_home = State()
     question_cancel_doctor = State()
 
-
-# Путь к JSON-файлу
-JSON_FILE = "bot_data.json"
-
-
-# Определение состояний
-class UserState(StatesGroup):
-    waiting_for_input = State()
-
-
-# Функция для загрузки данных из JSON
-def load_data():
-    try:
-        with open(JSON_FILE, "r") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-
-# Функция для сохранения данных в JSON
-def save_data(data):
-    with open(JSON_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-# Команда /begin
-@dp.message(Command("begin"))
-async def start_process(message: Message, state: FSMContext):
-    user_id = str(message.from_user.id)
-
-    # Устанавливаем состояние
-    await state.set_state(UserState.waiting_for_input)
-
-    # Сохраняем состояние в JSON
-    data = load_data()
-    data[user_id] = {"state": "waiting_for_input", "data": {}}
-    save_data(data)
-
-    await message.reply("Введите данные:")
-
-
-# Обработка ввода в состоянии waiting_for_input
-@dp.message(StateFilter(UserState.waiting_for_input))
-async def process_input(message: Message, state: FSMContext):
-    user_id = str(message.from_user.id)
-
-    await message.reply(f"Вы ввели: {message.text}")
-    await state.clear()  # Завершаем состояние
-
-    # Удаляем пользователя из JSON после завершения
-    data = load_data()
-    if user_id in data:
-        del data[user_id]
-    save_data(data)
-
-
-# Хук при запуске
-async def on_startup():
-    print("Бот запущен!")
-    data = load_data()
-
-    # Восстанавливаем состояния из JSON
-    for user_id, user_data in data.items():
-        state_name = user_data.get("state")
-        if state_name == "waiting_for_input":
-            await dp.storage.set_state(user=user_id, state=UserState.waiting_for_input)
-            await dp.storage.set_data(user=user_id, data=user_data.get("data", {}))
-            await bot.send_message(user_id, "Бот перезапустился, продолжаем работу! Введите данные:")
-
-
-
 # Обработчик команды /start
 @dp.message(Command("start"))
-async def start_command(message: types.Message):
-    await message.reply(
-        f' Добро пожаловать,\n'
-        f' я бот помошник по ГБУЗ НО ГКБ №12\n'
-        f' г.Нижний Новгород, Мочалова, д.8\n'
-        f' для получения информации оспользуйтесь кнопками внизу\n'
-        f' замечания и предложения: {creator}\n'
-        f'\n'
-        f' версия бота: {version}\n', reply_markup=kb_client)
+async def start_command(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    logger.info(f"Текущее состояние пользователя: {current_state}")
+    if current_state:
+        await message.answer(f"Восстановлено состояние: {current_state}")
+    else:
+        await message.reply(
+            f' Добро пожаловать,\n'
+            f' я бот помошник по ГБУЗ НО ГКБ №12\n'
+            f' г.Нижний Новгород, Мочалова, д.8\n'
+            f' для получения информации оспользуйтесь кнопками внизу\n'
+            f' замечания и предложения: {creator}\n'
+            f'\n'
+            f' версия бота: {version}\n', reply_markup=kb_client)
+
 
 # Обработчик текстового сообщения "АДРЕСА И ТЕЛЕФОНЫ"
 @dp.message(F.text == "АДРЕСА И ТЕЛЕФОНЫ")
@@ -736,17 +672,34 @@ async def get_spec(message: types.Message, state: FSMContext):
                     spec_dict_final[name] = i['MedStaffFact_id']
                 print(f' ? post_id: {post_id}')
                 print(f' это dict: {spec_dict_final}')
-
+                spec_dict_final = {key.capitalize(): value for key, value in spec_dict_final.items()}
                 await state.update_data(spec_dict_final=spec_dict_final)
 
+                # Функция для создания клавиатуры с кнопками в 3 ряда
+                def create_doc_keyboard():
+                    # Разбиваем список на группы по 3 элемента
+                    rows = [list(spec_dict_final.keys())[i:i + 3] for i in range(0, len(spec_dict_final), 3)]
 
-                # Способ 1: Использование ReplyKeyboardMarkup
-                doc = ReplyKeyboardMarkup(
-                    keyboard=[
-                        [KeyboardButton(text=key)] for key in spec_dict_final  # Кнопки для врачей
-                    ],
-                    resize_keyboard=True
-                )
+                    # Создаем клавиатуру
+                    keyboard = [
+                        [KeyboardButton(text=key) for key in row]  # Создаем ряд кнопок
+                        for row in rows  # Для каждой группы из 3 элементов
+                    ]
+
+                    # Возвращаем клавиатуру
+                    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+                # Пример использования
+                doc = create_doc_keyboard()
+
+
+                # # Способ 1: Использование ReplyKeyboardMarkup
+                # doc = ReplyKeyboardMarkup(
+                #     keyboard=[
+                #         [KeyboardButton(text=key)] for key in spec_dict_final  # Кнопки для врачей
+                #     ],
+                #     resize_keyboard=True
+                # )
 
                 # Добавляем кнопку "вернуться в меню" в начало списка
                 doc.keyboard.insert(0, [KeyboardButton(text="вернуться в меню")])
@@ -806,14 +759,21 @@ async def get_doctor(message: types.Message, state: FSMContext):
             await message.answer('На ближайшие 4 дня нет свободных дат к данному специалисту.')
             await return_to_main_menu(message, state)
         else:
-            # Создаем клавиатуру с датами
+            # Создаем клавиатуру
             builder = ReplyKeyboardBuilder()
+
+            # Добавляем кнопку "вернуться в меню" наверху
+            builder.row(KeyboardButton(text="вернуться в меню"))
+
+            # Добавляем остальные кнопки
             for i in data_time_final:
                 builder.add(KeyboardButton(text=i['TimeTableGraf_begTime']))
-            builder.adjust(2)  # Группируем кнопки по 2 в строке
 
-            # Добавляем кнопку "вернуться в меню"
-            builder.row(KeyboardButton(text="вернуться в меню"))
+            # Группируем кнопки по 2 в строке (кроме кнопки "вернуться в меню")
+            builder.adjust(3)
+
+            # Получаем клавиатуру
+            keyboard = builder.as_markup(resize_keyboard=True)
 
             # Отправляем сообщение с клавиатурой
             await message.answer(
@@ -1015,9 +975,7 @@ async def get_person(message: types.Message, state: FSMContext):
 changelog = 'реализована отмена'
 
 
-# Запуск бота
 async def main():
-    dp.startup.register(on_startup)
     await dp.start_polling(bot, skip_updates=True)
 
 if __name__ == '__main__':

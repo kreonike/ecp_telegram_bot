@@ -14,8 +14,10 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.utils.token import TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
+
+import home_status
 from keyboards.client_kb import (
-    kb_client, spec_client, pol_client, menu_client, ident_client, choise_client
+    kb_client, spec_client, pol_client, menu_client, ident_client, choise_client, check_client
 )
 from config import bot_token
 import base_ecp
@@ -49,7 +51,7 @@ bot = Bot(token=bot_token, session=session)
 dp = Dispatcher()
 
 # Версия и создатель
-version = '2.3.6 release'
+version = '3.0.1 release'
 creator = '@rapot'
 
 # Состояния
@@ -87,6 +89,7 @@ class ClientRequests(StatesGroup):
     cancel_doctor = State()
     cancel_home = State()
     question_cancel_doctor = State()
+    checking_home = State()
 
 # Обработчик команды /start
 @dp.message(Command("start"))
@@ -338,10 +341,18 @@ async def polyclinic_4(message: types.Message, state: FSMContext):
 
 @dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ')
 async def cancel_command(message: types.Message, state: FSMContext):
+    await message.reply('Запись куда хотите проверить ?', reply_markup=check_client)
+
+
+@dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
+async def cancel_command(message: types.Message, state: FSMContext):
     await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ', reply_markup=menu_client)
     await state.set_state(ClientRequests.checking)
 
-
+@dp.message(F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
+async def cancel_command(message: types.Message, state: FSMContext):
+    await bot.send_message(message.from_user.id, 'Введите идентификатор: ', reply_markup=menu_client)
+    await state.set_state(ClientRequests.checking_home)
 
 
 
@@ -406,6 +417,39 @@ async def checking(message: types.Message, state: FSMContext):
         )
 
     # Возврат в главное меню
+    await return_to_main_menu(message, state)
+
+@dp.message(ClientRequests.checking_home)
+async def checking(message: types.Message, state: FSMContext):
+    mess = message.text
+    logger.info(f"Получено сообщение: {mess}")
+
+    # Обработка команды "вернуться в меню"
+    if mess == 'вернуться в меню':
+        logger.info("Пользователь вернулся в главное меню")
+        await return_to_main_menu(message, state)
+        return
+
+    # Проверка, что введены только цифры
+    if not mess.isdigit():
+        await message.reply('Неверный ввод. Вводите только цифры, без символов и пробелов.')
+        return
+
+    entry_data_home = home_status.entry_status_home(mess)
+    print(f'получено entry_data_home {entry_data_home}')
+
+    status_call = {1: 'новый', 2: 'отказ', 3: 'Одобрен врачом', 4: 'Обслужен', 5: 'Отменен', 6: 'Назначен врач'}
+
+    for entry in entry_data_home['data']:
+        await message.reply(
+            f"Идентификатор вызова: {mess}\n"
+            f"Вызов запланирован на: {entry['HomeVisit_setDT'].split()[0]}\n"
+            f"Адрес: {entry['Address_Address']}\n"
+            f"Телефон: {entry['HomeVisit_Phone']}\n"
+            f"Статус вызова: {status_call[int(entry['HomeVisitWhoCall_id'])]}",
+            parse_mode=None
+        )
+
     await return_to_main_menu(message, state)
 
 @dp.message(F.text == 'ОТМЕНА ЗАПИСИ')

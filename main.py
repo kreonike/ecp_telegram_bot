@@ -1,4 +1,5 @@
 import logging
+import json
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.client import telegram
@@ -8,6 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.fsm.storage.redis import RedisStorage
 
 import base_ecp
 import entry_home
@@ -45,8 +47,9 @@ bot = Bot(token=bot_token, session=session)
 dp = Dispatcher()
 
 # Версия и создатель
-version = '3.0.1 release'
+version = '3.0.2 release'
 creator = '@rapot'
+bot_birthday = '13.10.2022 15:14'
 
 # Состояния
 class ClientRequests(StatesGroup):
@@ -85,6 +88,22 @@ class ClientRequests(StatesGroup):
     question_cancel_doctor = State()
     checking_home = State()
 
+
+def save_user_to_json(user_data):
+    try:
+        with open('users.json', 'r', encoding='utf-8') as file:
+            users = json.load(file)
+    except FileNotFoundError:
+        users = []
+
+    users.append(user_data)
+
+    # Записываем обновленный список обратно в файл
+    with open('users.json', 'w', encoding='utf-8') as file:
+        json.dump(users, file, ensure_ascii=False, indent=4)
+
+
+
 @dp.message(Command("start"))
 async def start_command(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -100,6 +119,18 @@ async def start_command(message: types.Message, state: FSMContext):
             f' замечания и предложения: {creator}\n'
             f'\n'
             f' версия бота: {version}\n', reply_markup=kb_client)
+
+        # Собираем данные о пользователе
+        user_data = {
+            "user_id": message.from_user.id,
+            "username": message.from_user.username,
+            "first_name": message.from_user.first_name,
+            "last_name": message.from_user.last_name,
+            "date": message.date.isoformat()
+        }
+
+        # Сохраняем данные в JSON
+        save_user_to_json(user_data)
 
 
 # Обработчик текстового сообщения "АДРЕСА И ТЕЛЕФОНЫ"
@@ -666,22 +697,38 @@ async def get_spec(message: types.Message, state: FSMContext):
             data_lpu_person_old = search_spec_doctor.search_spec_doctor(base_ecp_spec, pol)
 
             print(f' 22 на выходе data_lpu_person_old: {data_lpu_person_old}')
-            data_lpu_person = []
+            # data_lpu_person = []
             print(data_lpu_person_old)
-            for key in data_lpu_person_old:
+
+            data_lpu_person = [
+                item for item in data_lpu_person_old
+                if item.get('RecType_id') == '1' and item.get('TimetableGraf_Count') != '0' and item.get('LpuSection_id') != '520101000013118'
+            ]
+
+
+            # # Вывод результата
+            # for item in filtered_data:
+            #     print(item)
+            #     data_lpu_person.append(item)
+            #
+
+
+            # for key in data_lpu_person_old:
                 # print(key)
-                if key['Post_id'] != '520101000000049' and key['Person_id'] != '5656886' \
-                        and key['Person_id'] != '7611212' and key['Person_id'] != '10168043' \
-                        and key['Person_id'] != '5570722' and key['Person_id'] != '7409255' \
-                        and key['Person_id'] != '7511183' and key['Person_id'] != '9827128' \
-                        and key['Person_id'] != '9901773' and key['Person_id'] != '9931987' \
-                        and key['Person_id'] != '10362016' and key['Person_id'] != '7437558' \
-                        and key['Person_id'] != '5656924' and key['Person_id'] != '7193169' \
-                        and key['MedStaffFact_id'] != '520101000104670' and key['MedStaffFact_id'] != '520101000104362' \
-                        and key['MedStaffFact_id'] != '520101000060459' and key['MedStaffFact_id'] != '520101000063947' \
-                        and key['MedStaffFact_id'] != '520101000138375' \
-                        and key['RecType_id'] == '1':
-                    data_lpu_person.append(key)
+
+                # if key['Post_id'] != '520101000000049' and key['Person_id'] != '5656886' \
+                #         and key['Person_id'] != '7611212' and key['Person_id'] != '10168043' \
+                #         and key['Person_id'] != '5570722' and key['Person_id'] != '7409255' \
+                #         and key['Person_id'] != '7511183' and key['Person_id'] != '9827128' \
+                #         and key['Person_id'] != '9901773' and key['Person_id'] != '9931987' \
+                #         and key['Person_id'] != '10362016' and key['Person_id'] != '7437558' \
+                #         and key['Person_id'] != '5656924' and key['Person_id'] != '7193169' \
+                #         and key['MedStaffFact_id'] != '520101000104670' and key['MedStaffFact_id'] != '520101000104362' \
+                #         and key['MedStaffFact_id'] != '520101000060459' and key['MedStaffFact_id'] != '520101000063947' \
+                #         and key['MedStaffFact_id'] != '520101000138375' and key['MedStaffFact_id'] != '520101000134439' \
+                #         and key['MedStaffFact_id'] != '520101000140118' \
+                #         and key['RecType_id'] == '1':
+                    #data_lpu_person.append(key)
                     # print(key)
 
             print(f' HHHHH data_lpu_person: {data_lpu_person}')

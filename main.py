@@ -9,7 +9,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from aiogram.fsm.storage.redis import RedisStorage
 
 import base_ecp
 import entry_home
@@ -24,10 +23,12 @@ import search_spec_doctor
 import search_time
 import search_time2
 import time_delete
-from config import bot_token
+from config.config import bot_token
 from keyboards.client_kb import (
     kb_client, spec_client, pol_client, menu_client, ident_client, choise_client, check_client
 )
+from states.states import ClientRequests
+from utils.json_utils import save_user_to_json
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -50,58 +51,6 @@ dp = Dispatcher()
 version = '3.0.2 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
-
-# Состояния
-class ClientRequests(StatesGroup):
-    spec = State()
-    doctor = State()
-    menu = State()
-    pol = State()
-    doctor_name = State()
-    time = State()
-    person = State()
-    date = State()
-    polic = State()
-    entry = State()
-    TimeTableGraf_id = State()
-    person_id = State()
-    main_menu = State()
-    cancel = State()
-    entry_delete = State()
-    MedStaffFact_id = State()
-    checking = State()
-    time_time = State()
-    post_id = State()
-    message_time = State()
-    spec_dict_final = State()
-    call_home = State()
-    address = State()
-    phone = State()
-    reason = State()
-    call_checking = State()
-    call_entry = State()
-    call_address = State()
-    call_entry_question = State()
-    call_entry_finish = State()
-    cancel_doctor = State()
-    cancel_home = State()
-    question_cancel_doctor = State()
-    checking_home = State()
-
-
-def save_user_to_json(user_data):
-    try:
-        with open('users.json', 'r', encoding='utf-8') as file:
-            users = json.load(file)
-    except FileNotFoundError:
-        users = []
-
-    users.append(user_data)
-
-    # Записываем обновленный список обратно в файл
-    with open('users.json', 'w', encoding='utf-8') as file:
-        json.dump(users, file, ensure_ascii=False, indent=4)
-
 
 
 @dp.message(Command("start"))
@@ -702,7 +651,7 @@ async def get_spec(message: types.Message, state: FSMContext):
 
             data_lpu_person = [
                 item for item in data_lpu_person_old
-                if item.get('RecType_id') == '1' and item.get('TimetableGraf_Count') != '0' and item.get('LpuSection_id') != '520101000013118'
+                if item.get('RecType_id') == '1' and item.get('TimetableGraf_Count') != '0'
             ]
 
 

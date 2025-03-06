@@ -40,9 +40,11 @@ no = KeyboardButton(text='НЕТ')
 
 menu = KeyboardButton(text='вернуться в меню')
 
+# Новые кнопки
 check_doctor = KeyboardButton(text='ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
 check_home_call = KeyboardButton(text='ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
 
+# Создаем клавиатуры с помощью ReplyKeyboardBuilder
 def create_kb_client() -> ReplyKeyboardBuilder:
     builder = ReplyKeyboardBuilder()
     builder.row(spec, checking)

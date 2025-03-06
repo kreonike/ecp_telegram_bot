@@ -1,6 +1,6 @@
 import logging
 import datetime
-from config import bot_token, login_ecp, password_ecp
+from config.config import bot_token, login_ecp, password_ecp
 import requests
 import authorization
 

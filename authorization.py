@@ -1,5 +1,5 @@
 import logging
-from config import bot_token, login_ecp, password_ecp
+from config.config import bot_token, login_ecp, password_ecp
 import requests
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)

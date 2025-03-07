@@ -26,7 +26,8 @@ async def start_command(message: types.Message, state: FSMContext):
             f' для получения информации оспользуйтесь кнопками внизу\n'
             f' замечания и предложения: {creator}\n'
             f'\n'
-            f' версия бота: {version}\n', reply_markup=kb_client)
+            f' версия бота: {version}\n'
+            f' дата создания: {bot_birthday}\n', reply_markup=kb_client)
 
         # Собираем данные о пользователе
         user_data = {

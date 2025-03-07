@@ -24,6 +24,9 @@ import search_time
 import search_time2
 import time_delete
 from config.config import bot_token
+from handlers import info_handler, worker_handler, start_handler, person_handler, doctor_handler, return_to_main_menu_handler, spec_handler, po1_handler, po2_handler, po3_handler, po4_handler
+from handlers.doctor_handler import get_doctor
+from handlers.spec_handler import get_spec
 from keyboards.client_kb import (
     kb_client, spec_client, pol_client, menu_client, ident_client, choise_client, check_client
 )
@@ -47,85 +50,25 @@ bot = Bot(token=bot_token, session=session)
 #dp = Dispatcher(storage=redis_storage)  # Используем RedisStorage
 dp = Dispatcher()
 
+
 # Версия и создатель
 version = '3.0.2 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
 
 
-@dp.message(Command("start"))
-async def start_command(message: types.Message, state: FSMContext):
-    current_state = await state.get_state()
-    logger.info(f"Текущее состояние пользователя: {current_state}")
-    if current_state:
-        await message.answer(f"Восстановлено состояние: {current_state}")
-    else:
-        await message.reply(
-            f' Добро пожаловать,\n'
-            f' я бот помошник по ГБУЗ НО ГКБ №12\n'
-            f' г.Нижний Новгород, Мочалова, д.8\n'
-            f' для получения информации оспользуйтесь кнопками внизу\n'
-            f' замечания и предложения: {creator}\n'
-            f'\n'
-            f' версия бота: {version}\n', reply_markup=kb_client)
-
-        # Собираем данные о пользователе
-        user_data = {
-            "user_id": message.from_user.id,
-            "username": message.from_user.username,
-            "first_name": message.from_user.first_name,
-            "last_name": message.from_user.last_name,
-            "date": message.date.isoformat()
-        }
-
-        # Сохраняем данные в JSON
-        save_user_to_json(user_data)
+# Подключение обработчиков
+dp.message.register(start_handler.start_command, Command("start"))
+dp.message.register(info_handler.info_command, F.text == "АДРЕСА И ТЕЛЕФОНЫ")
+dp.message.register(worker_handler.worker_command, F.text == "РЕЖИМ РАБОТЫ")
+dp.message.register(person_handler.get_person_polis, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
+dp.message.register(po1_handler.polyclinic_1, F.text == 'ПОЛИКЛИНИКА 1')
+dp.message.register(po2_handler.polyclinic_2, F.text == 'ПОЛИКЛИНИКА 2')
+dp.message.register(po3_handler.polyclinic_3, F.text == 'ПОЛИКЛИНИКА 3')
+dp.message.register(po4_handler.polyclinic_4, F.text == 'ПОЛИКЛИНИКА 4')
+dp.message.register(get_spec, ClientRequests.spec)
 
 
-# Обработчик текстового сообщения "АДРЕСА И ТЕЛЕФОНЫ"
-@dp.message(F.text == "АДРЕСА И ТЕЛЕФОНЫ")
-async def info_command(message: types.Message):
-    await message.answer(
-        f' *CТАЦИОНАР ГКБ12*\n'
-        f' Нижний Новгородул, ул. Павла Мочалова,8\n'
-        f' Секретарь: 273-00-62\n'
-        f'\n'
-        f' *ПОЛИКЛИНИКА №1*\n'
-        f' Нижний Новгород, ул.Васенко,11\n'
-        f' регистратура: 280-85-95\n'
-        f'\n'
-        f' *ПОЛИКЛИНИКА №2*\n'
-        f' Нижний Новгород, ул.Свободы, 3\n'
-        f' регистратура: 273-03-00\n'
-        f'\n'
-        f' *ПОЛИКЛИНИКА №3*\n'
-        f' Нижний Новгород, ул.Циолковского,9\n'
-        f' Регистратура 225-01-87\n'
-        f'\n'
-        f' *ПОЛИКЛИНИКА №4*\n'
-        f' Светлоярская улица, 38А'
-        f' регистратура: 271-89-72', reply_markup=kb_client, parse_mode="Markdown")
-
-# Обработчик текстового сообщения "режим работы"
-@dp.message(F.text == "режим работы")
-async def worker_command(message: types.Message):
-    await message.answer(
-        f' Стационар ГБК12\n'
-        f' круглосуточно\n'
-        f'\n'
-        f' Поликлиника №1\n'
-        f' пн-пт 7:30-19:30\n'
-        f' сб-вс 08.30-14.30\n'
-        f'\n'
-        f' Поликлиника №2\n'
-        f' пн-пт 7:30-19:30\n'
-        f' \n'
-        f' Поликлиника №3\n'
-        f' пн-пт 7:30-19:00\n'
-        f' сб-вс 08:00-14:00'
-        f'\n'
-        f' Поликлиника №4\n'
-        f' пн-пт 7:30-19:30', reply_markup=kb_client)
 
 async def return_to_main_menu(message: types.Message, state: FSMContext):
     await state.clear()
@@ -287,29 +230,7 @@ async def write_command(message: types.Message):
 async def spec_command(message: types.Message):
     await message.reply('Выберите поликлинику', reply_markup=pol_client)
 
-@dp.message(F.text == 'ПОЛИКЛИНИКА 1')
-async def polyclinic_1(message: types.Message, state: FSMContext):
-    await state.update_data(pol='520101000000589')
-    await message.reply('Выберите специальность', reply_markup=spec_client)
-    await state.set_state(ClientRequests.spec)
 
-@dp.message(F.text == 'ПОЛИКЛИНИКА 2')
-async def polyclinic_2(message: types.Message, state: FSMContext):
-    await state.update_data(pol='520101000000591')
-    await message.reply('Выберите специальность', reply_markup=spec_client)
-    await state.set_state(ClientRequests.spec)
-
-@dp.message(F.text == 'ПОЛИКЛИНИКА 3')
-async def polyclinic_3(message: types.Message, state: FSMContext):
-    await state.update_data(pol='520101000001382')
-    await message.reply('Выберите специальность', reply_markup=spec_client)
-    await state.set_state(ClientRequests.spec)
-
-@dp.message(F.text == 'ПОЛИКЛИНИКА 4')
-async def polyclinic_4(message: types.Message, state: FSMContext):
-    await state.update_data(pol='520101000000181')
-    await message.reply('Выберите специальность', reply_markup=spec_client)
-    await state.set_state(ClientRequests.spec)
 
 
 @dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ')
@@ -327,70 +248,6 @@ async def cancel_command(message: types.Message, state: FSMContext):
     await bot.send_message(message.from_user.id, 'Введите идентификатор: ', reply_markup=menu_client)
     await state.set_state(ClientRequests.checking_home)
 
-
-
-@dp.message(ClientRequests.checking)
-async def checking(message: types.Message, state: FSMContext):
-    mess = message.text
-    logger.info(f"Получено сообщение: {mess}")
-
-    # Обработка команды "вернуться в меню"
-    if mess == 'вернуться в меню':
-        logger.info("Пользователь вернулся в главное меню")
-        await return_to_main_menu(message, state)
-        return
-
-    # Проверка, что введены только цифры
-    if not mess.isdigit():
-        await message.reply('Неверный ввод. Вводите только цифры, без символов и пробелов.')
-        return
-
-    # Проверка длины номера полиса
-    if len(mess) != 16:
-        await message.reply('Неверный ввод. Номер полиса должен содержать 16 цифр.')
-        return
-
-    # Поиск данных по полису
-    logger.info("Поиск данных по полису...")
-    polis_data = search_polis.search_polis(mess)
-
-    if not polis_data['data']:
-        logger.warning("Полис не найден")
-        await message.reply('Неверный ввод. Такого полиса не существует.')
-        return
-
-    # Получение данных о человеке
-    person_id = polis_data['data'][0]['Person_id']
-    person_data = search_person.search_person(person_id)
-
-    if not person_data['data']:
-        logger.error("Данные о человеке не найдены")
-        await message.reply('Ошибка: данные о человеке не найдены.')
-        return
-
-    # Получение данных о записях
-    entry_data = entry_status.entry_status(person_id)
-
-    if not entry_data['data']['TimeTable']:
-        logger.info("Записей на приём не найдено")
-        await message.reply('Записей на приём не найдено.')
-        await return_to_main_menu(message, state)
-        return
-
-    # Отображение информации о записях
-    for key in entry_data['data']['TimeTable']:
-        name = key['Post_name']
-        time = key['TimeTable_begTime']
-        id = key['TimeTable_id']
-        await message.answer(
-            f'Вы записаны к: {name}\n'
-            f'На время: {time}\n'
-            f'ID бирки: `{id}`',
-            parse_mode="Markdown"
-        )
-
-    # Возврат в главное меню
-    await return_to_main_menu(message, state)
 
 @dp.message(ClientRequests.checking_home)
 async def checking(message: types.Message, state: FSMContext):
@@ -591,149 +448,6 @@ def del_entry(message_delete, entry_data):
             print(del_error)
             return del_error
 
-
-def spec_check(spec, base_ecp_medspecoms_id):
-    return spec in base_ecp_medspecoms_id
-
-
-# spec_client.add(menu)
-@dp.message(ClientRequests.spec)
-async def get_spec(message: types.Message, state: FSMContext):
-    await bot.send_message(message.chat.id, 'Идёт поиск, доступных для записи врачей, ожидайте')
-    global spec_dict_final
-    # print(f' на входе в get_spec {spec_dict_final}')
-    question_spec = message.text
-    if question_spec == 'вернуться в меню':
-        await state.set_state(ClientRequests.main_menu)
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        await state.clear()
-        print('выход тут')
-
-
-    else:
-        data_lpu_person = {}
-        spec_final = question_spec.lower()
-        print(f' получено значение: {question_spec}')
-        print(f' изменено на: {spec_final}')
-
-        await state.update_data(spec=spec_final)
-
-        data = await state.get_data()
-        spec = data.get('spec')
-        pol = data.get('pol')
-
-        print(f' spec = {spec}')
-        print(f' pol = {pol}')
-        #await ClientRequests.next()
-
-        base_ecp_medspecoms_id = base_ecp.medspecoms_id
-        t = checking_spec = spec_check(spec, base_ecp_medspecoms_id)
-        if t == False:
-            await state.set_state(ClientRequests.main_menu)
-            await message.reply('Неверный ввод специальности, повторите запрос', reply_markup=kb_client)
-            await state.clear()
-
-        else:
-
-            base_ecp_spec = base_ecp.medspecoms_id[spec]
-
-            # print(f' базовая ид специальности: {base_ecp_spec}')
-            logging.info(f' запрошена специальность: {base_ecp_spec}')
-
-            await state.set_state(ClientRequests.main_menu)
-            await state.clear()
-
-            data_lpu_person_old = search_spec_doctor.search_spec_doctor(base_ecp_spec, pol)
-
-            print(f' 22 на выходе data_lpu_person_old: {data_lpu_person_old}')
-            # data_lpu_person = []
-            print(data_lpu_person_old)
-
-            data_lpu_person = [
-                item for item in data_lpu_person_old
-                if item.get('RecType_id') == '1' and item.get('TimetableGraf_Count') != '0'
-            ]
-
-
-            # # Вывод результата
-            # for item in filtered_data:
-            #     print(item)
-            #     data_lpu_person.append(item)
-            #
-
-
-            # for key in data_lpu_person_old:
-                # print(key)
-
-                # if key['Post_id'] != '520101000000049' and key['Person_id'] != '5656886' \
-                #         and key['Person_id'] != '7611212' and key['Person_id'] != '10168043' \
-                #         and key['Person_id'] != '5570722' and key['Person_id'] != '7409255' \
-                #         and key['Person_id'] != '7511183' and key['Person_id'] != '9827128' \
-                #         and key['Person_id'] != '9901773' and key['Person_id'] != '9931987' \
-                #         and key['Person_id'] != '10362016' and key['Person_id'] != '7437558' \
-                #         and key['Person_id'] != '5656924' and key['Person_id'] != '7193169' \
-                #         and key['MedStaffFact_id'] != '520101000104670' and key['MedStaffFact_id'] != '520101000104362' \
-                #         and key['MedStaffFact_id'] != '520101000060459' and key['MedStaffFact_id'] != '520101000063947' \
-                #         and key['MedStaffFact_id'] != '520101000138375' and key['MedStaffFact_id'] != '520101000134439' \
-                #         and key['MedStaffFact_id'] != '520101000140118' \
-                #         and key['RecType_id'] == '1':
-                    #data_lpu_person.append(key)
-                    # print(key)
-
-            print(f' HHHHH data_lpu_person: {data_lpu_person}')
-
-            global post_id
-
-            for key in data_lpu_person:
-                post_id = key['Post_id']
-
-            # print(post_id)
-
-            if data_lpu_person == []:
-                await bot.send_message(message.from_user.id,
-                                       'К данному специалисту запись на 5 ближайших дней отсутствует',
-                                       reply_markup=kb_client)
-                await state.set_state(ClientRequests.main_menu)
-                # await message.reply('выберите раздел', reply_markup=kb_client)
-                await state.clear()
-
-
-
-            else:
-                #doc = ReplyKeyboardMarkup(resize_keyboard=True)
-                spec_dict_final = {}
-                print(f't0: {spec_dict_final}')
-                for i in data_lpu_person:
-                    name = i['PersonSurName_SurName']
-                    spec_dict_final[name] = i['MedStaffFact_id']
-                print(f' ? post_id: {post_id}')
-                print(f' это dict: {spec_dict_final}')
-                spec_dict_final = {key.capitalize(): value for key, value in spec_dict_final.items()}
-                await state.update_data(spec_dict_final=spec_dict_final)
-
-                # Функция для создания клавиатуры с кнопками в 3 ряда
-                def create_doc_keyboard():
-                    # Разбиваем список на группы по 3 элемента
-                    rows = [list(spec_dict_final.keys())[i:i + 3] for i in range(0, len(spec_dict_final), 3)]
-
-                    keyboard = [
-                        [KeyboardButton(text=key) for key in row]  # Создаем ряд кнопок
-                        for row in rows  # Для каждой группы из 3 элементов
-                    ]
-
-                    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
-
-                doc = create_doc_keyboard()
-                doc.keyboard.insert(0, [KeyboardButton(text="вернуться в меню")])
-
-                # Отправляем сообщение с клавиатурой
-                await message.reply('К кому хотим записаться?', reply_markup=doc)
-                await state.set_state(ClientRequests.doctor)
-
-                await state.set_state(ClientRequests.doctor)
-
-            # print(f' !! {post_id}')
-            print(f't1: {spec_dict_final}')
 
 
 @dp.message(ClientRequests.doctor)
@@ -993,3 +707,5 @@ async def main():
 if __name__ == '__main__':
     import asyncio
     asyncio.run(main())
+
+

@@ -10,7 +10,7 @@ cancel_doctor = KeyboardButton(text='ОТМЕНА ЗАПИСИ К ВРАЧУ')
 cancel_home = KeyboardButton(text='ОТМЕНА ЗАПИСИ ВЫЗОВА НА ДОМ')
 checking = KeyboardButton(text='ПРОВЕРКА ЗАПИСИ')
 doctor = KeyboardButton(text='информация о врачах')
-woker = KeyboardButton(text='режим работы')
+woker = KeyboardButton(text='РЕЖИМ РАБОТЫ')
 
 ther = KeyboardButton(text='ТЕРАПЕВТ')
 vac = KeyboardButton(text='ВАКЦИНАЦИЯ')
@@ -48,8 +48,8 @@ check_home_call = KeyboardButton(text='ПРОВЕРКА ВЫЗОВА ВРАЧА 
 def create_kb_client() -> ReplyKeyboardBuilder:
     builder = ReplyKeyboardBuilder()
     builder.row(spec, checking)
-    builder.row(call, cancel)
-    builder.add(info)
+    builder.row(call, info)
+    builder.row(cancel, woker)
     return builder.as_markup(resize_keyboard=True)
 
 

@@ -21,7 +21,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from config.config import save_global_spec_dict_final, load_global_spec_dict_final
+from utils.json_temp_data import save_global_spec_dict_final, load_global_spec_dict_final
 print(f'doctor enter value', load_global_spec_dict_final())
 spec_dict_final = load_global_spec_dict_final()
 

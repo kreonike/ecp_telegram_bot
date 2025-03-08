@@ -43,7 +43,7 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         print(f' получена из функции: {person_id}')
 
         print('=========ПРОВЕРКА=========')
-        from config.config import save_global_spec_dict_final, load_global_spec_dict_final, save_postid, load_postid
+        from utils.json_temp_data import save_global_spec_dict_final, load_global_spec_dict_final, save_postid, load_postid
         post_id = load_postid()
         print(f' post_id для check: {post_id}')
         print(f' Person_id: {person_id}')

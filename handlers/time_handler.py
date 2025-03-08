@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from config.config import save_data_time_final, load_data_time_final
+from utils.json_temp_data import save_data_time_final, load_data_time_final
 
 
 

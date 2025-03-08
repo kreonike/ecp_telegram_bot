@@ -19,7 +19,7 @@ async def checking_reason(message: types.Message, state: FSMContext):
 
     reason_mess = message.text
     print(reason_mess)
-    from config.config import save_global_person_id, load_global_person_id, load_phone_mess, load_address_mess, save_global_spec_dict_final, save_reason_mess
+    from utils.json_temp_data import save_global_person_id, load_global_person_id, load_phone_mess, load_address_mess, save_global_spec_dict_final, save_reason_mess
     person_id = load_global_person_id()
     address_mess = load_address_mess()
     phone_mess = load_phone_mess()

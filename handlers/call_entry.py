@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 async def get_person(message: types.Message, state: FSMContext):
     message_entry = message.text
-    from config.config import save_global_person_id, load_global_person_id
+    from utils.json_temp_data import save_global_person_id, load_global_person_id
     person_id = load_global_person_id()
     print(person_id)
 

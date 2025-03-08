@@ -3,13 +3,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 import base_ecp
-#import config.config
-
 from base_ecp import medspecoms_id
+
 print(medspecoms_id)
 
 import search_spec_doctor
-from keyboards.client_kb import spec_client, kb_client
+from keyboards.client_kb import kb_client
 # from main import spec_check
 from states.states import ClientRequests
 
@@ -136,7 +135,7 @@ async def get_spec(message: types.Message, state: FSMContext):
 
             # print(f' !! {post_id}')
             print(f't1: {spec_dict_final}')
-            from utils.json_temp_data import save_global_spec_dict_final, load_global_spec_dict_final, save_postid, load_postid
+            from utils.json_temp_data import save_global_spec_dict_final, save_postid
             #current_value = load_variable()
             save_global_spec_dict_final(spec_dict_final)
             save_postid(post_id)

@@ -1,14 +1,12 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
-import search_spec_doctor
 import time_delete
-from keyboards.client_kb import spec_client, kb_client, menu_client
 # from main import spec_check
-from states.states import ClientRequests
 from handlers.return_to_main_menu_handler import return_to_main_menu
-import logging
+from keyboards.client_kb import kb_client, menu_client
 
 logger = logging.getLogger(__name__)
 

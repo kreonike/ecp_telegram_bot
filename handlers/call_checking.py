@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
@@ -6,8 +8,6 @@ import search_person
 import search_polis
 from keyboards.client_kb import menu_client, kb_client, ident_client
 from states.states import ClientRequests
-import search_time2
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ async def get_person_polis_call(message: types.Message, state: FSMContext):
         person_id = person['data'][0]['Person_id']
         check_entry_data = entry_status.entry_status(person_id)
 
-        from config.config import save_global_person_id, load_global_person_id
+        from config.config import save_global_person_id
         save_global_person_id(person_id)
 
         PersonSurName_SurName = person['data'][0]['PersonSurName_SurName']

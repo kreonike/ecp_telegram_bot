@@ -1,20 +1,17 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
-import entry_status
-import search_person
-import search_polis
-from keyboards.client_kb import menu_client, kb_client, ident_client
+from keyboards.client_kb import menu_client, kb_client
 from states.states import ClientRequests
-import search_time2
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 async def get_person(message: types.Message, state: FSMContext):
     message_entry = message.text
-    from utils.json_temp_data import save_global_person_id, load_global_person_id
+    from utils.json_temp_data import load_global_person_id
     person_id = load_global_person_id()
     print(person_id)
 

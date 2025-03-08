@@ -1,66 +1,35 @@
 import logging
-import json
-
-from aiogram import Bot, Dispatcher, types, F
-from aiogram.client import telegram
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.dispatcher import router
-from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
-
-import base_ecp
-import entry_home
-import entry_status
-import home_delete
-import home_status
-import search_date
-import search_entry
-import search_person
-import search_polis
-import search_spec_doctor
-import search_time
-import search_time2
-import time_delete
-from config.config import bot_token
-from handlers import (info_handler, worker_handler, start_handler, person_handler,
-                      doctor_handler, return_to_main_menu_handler, spec_handler, po1_handler,
-                      po2_handler, po3_handler, po4_handler, time_handler, cancel_handler, call_home_handler, call_checking_home_handler)
-from handlers.doctor_handler import get_doctor
-from handlers.spec_handler import get_spec
-from handlers.time_handler import get_person_time
-from handlers.get_person_handler import get_person_polis
-from handlers.entry_handler import entry_person
-from handlers.entry_delete_handler import get_delete
-from handlers.call_checking import get_person_polis_call
-from handlers.call_entry import get_person
-from handlers.call_phone import checking_phone
-from handlers.call_address import checking_address
-from handlers.call_reason_handler import checking_reason
-from handlers.call_entry_question_handler import get_person_question
-from handlers.call_home_handler import call_home
-from handlers.menu_entry_handler import spec_command
-from handlers.menu_doctor_check_entry_handler import check_doctor_command
-from handlers.menu_call_check_entry_handler import check_call_command
-#from handlers.call_checking_home_handler import checking_call_home
-from handlers.menu_check_enrty_handler import menu_check_entry_command
-
-
-
-
-from handlers.cancel_handler import cancel_command, cancel_doctor_command, cancel_home_command
-from handlers.cancel_doctor_handler import checking_entry
-
-from keyboards.client_kb import (
-    kb_client, spec_client, pol_client, menu_client, ident_client, choise_client, check_client
-)
-from states.states import ClientRequests
-from utils.json_utils import save_user_to_json
 
 from aiogram import Bot, Dispatcher
+from aiogram import F
+from aiogram.client import telegram
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.filters import Command
 
+from config.config import bot_token
+from handlers import (info_handler, worker_handler, start_handler, person_handler,
+                      return_to_main_menu_handler, po1_handler,
+                      po2_handler, po3_handler, po4_handler, cancel_handler, call_checking_home_handler)
+from handlers.call_address import checking_address
+from handlers.call_checking import get_person_polis_call
+from handlers.call_entry import get_person
+from handlers.call_entry_question_handler import get_person_question
+from handlers.call_home_handler import call_home
+from handlers.call_phone import checking_phone
+from handlers.call_reason_handler import checking_reason
+from handlers.cancel_doctor_handler import checking_entry
+from handlers.doctor_handler import get_doctor
+from handlers.entry_delete_handler import get_delete
+from handlers.entry_handler import entry_person
+from handlers.get_person_handler import get_person_polis
+from handlers.menu_call_check_entry_handler import check_call_command
+# from handlers.call_checking_home_handler import checking_call_home
+from handlers.menu_check_enrty_handler import menu_check_entry_command
+from handlers.menu_doctor_check_entry_handler import check_doctor_command
+from handlers.menu_entry_handler import spec_command
+from handlers.spec_handler import get_spec
+from handlers.time_handler import get_person_time
+from states.states import ClientRequests
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -129,14 +98,6 @@ dp.message.register(return_to_main_menu_handler.return_to_main_menu, F.text == '
 
 
 
-
-# @dp.message(F.text == 'вернуться в меню')
-# async def return_to_menu(message: types.Message, state: FSMContext):
-#     await state.clear()  # Сбрасываем состояние
-#     await message.answer("Вы вернулись в главное меню.", reply_markup=kb_client)
-
-
-
 async def main():
     await dp.start_polling(bot, skip_updates=True)
 
@@ -176,29 +137,4 @@ if __name__ == '__main__':
 #     await state.clear()
 #     await message.answer('Выберите раздел:', reply_markup=kb_client)
 #     logger.info("Пользователь возвращён в главное меню")
-
-
-
-
-# работает ли без этого ?
-
-# async def return_to_main_menu(message: types.Message, state: FSMContext):
-#     await state.clear()
-#     await message.answer('Выберите раздел:', reply_markup=kb_client)
-#     logger.info("Пользователь возвращён в главное меню")
-#
-#
-# @dp.message(F.text == 'вернуться в меню')
-# async def return_to_menu(message: types.Message, state: FSMContext):
-#     await state.clear()  # Сбрасываем состояние
-#     await message.answer("Вы вернулись в главное меню.", reply_markup=kb_client)
-#
-# #
-# #
-# #
-# @dp.message(Command(commands=["entry"]))
-# async def write_command(message: types.Message):
-#     await message.answer(version, reply_markup=kb_client)
-
-
 

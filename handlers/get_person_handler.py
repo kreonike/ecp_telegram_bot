@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
@@ -6,8 +8,6 @@ import search_person
 import search_polis
 from keyboards.client_kb import menu_client, kb_client, ident_client
 from states.states import ClientRequests
-import search_time2
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         print(f' получена из функции: {person_id}')
 
         print('=========ПРОВЕРКА=========')
-        from utils.json_temp_data import save_global_spec_dict_final, load_global_spec_dict_final, save_postid, load_postid
+        from utils.json_temp_data import load_postid
         post_id = load_postid()
         print(f' post_id для check: {post_id}')
         print(f' Person_id: {person_id}')
@@ -59,7 +59,7 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         print(check_entry_data)
         print(date_whithout_time)
 
-        from utils.json_temp_data import save_check_error, load_check_error
+        from utils.json_temp_data import save_check_error
         #global check_error
         check_error = 0
         save_check_error(check_error)

@@ -1,11 +1,11 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
 import search_entry
 from keyboards.client_kb import kb_client, menu_client
 from states.states import ClientRequests
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ async def entry_person(message: types.Message, state: FSMContext):
 
 
     elif message_entry == 'ДА':
-        from utils.json_temp_data import save_check_error, load_check_error
+        from utils.json_temp_data import load_check_error
         check_error = load_check_error()
         print(f' check_error', check_error)
         if check_error == 6:

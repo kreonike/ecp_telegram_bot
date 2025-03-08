@@ -1,15 +1,16 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
+
+import search_time2
 from keyboards.client_kb import menu_client, kb_client
 from states.states import ClientRequests
-import search_time2
-import logging
 
 logger = logging.getLogger(__name__)
 
 
-from utils.json_temp_data import save_data_time_final, load_data_time_final
-
+from utils.json_temp_data import save_data_time_final
 
 
 async def get_person_time(message: types.Message, state: FSMContext):

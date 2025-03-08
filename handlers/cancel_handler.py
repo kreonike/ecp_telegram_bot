@@ -1,11 +1,11 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
-from keyboards.client_kb import choise_client, menu_client, kb_client
-#from main import del_entry
-from states.states import ClientRequests
-from handlers.return_to_main_menu_handler import return_to_main_menu
 
-import logging
+from handlers.return_to_main_menu_handler import return_to_main_menu
+from keyboards.client_kb import choise_client, menu_client, kb_client
+from states.states import ClientRequests
 
 logger = logging.getLogger(__name__)
 

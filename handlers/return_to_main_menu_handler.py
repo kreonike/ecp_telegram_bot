@@ -1,9 +1,9 @@
-from aiogram import types
-from aiogram.fsm.context import FSMContext
-from keyboards.client_kb import kb_client
 import logging
 
+from aiogram import types
+from aiogram.fsm.context import FSMContext
 
+from keyboards.client_kb import kb_client
 
 logger = logging.getLogger(__name__)
 

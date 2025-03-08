@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import KeyboardButton
@@ -6,22 +8,17 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 import search_date
 import search_time
 from handlers.return_to_main_menu_handler import return_to_main_menu
-# from config.config import global_spec_dict_final
-
 # from handlers.spec_handler import get_spec
 from keyboards.client_kb import kb_client
-from handlers import return_to_main_menu_handler
-#from main import return_to_main_menu
+# from main import return_to_main_menu
 from states.states import ClientRequests
-import base_ecp
 
-
-import logging
+# from config.config import global_spec_dict_final
 
 
 logger = logging.getLogger(__name__)
 
-from utils.json_temp_data import save_global_spec_dict_final, load_global_spec_dict_final
+from utils.json_temp_data import load_global_spec_dict_final
 print(f'doctor enter value', load_global_spec_dict_final())
 spec_dict_final = load_global_spec_dict_final()
 

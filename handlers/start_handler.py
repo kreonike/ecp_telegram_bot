@@ -1,9 +1,10 @@
+import logging
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
-import logging
-import json
-from utils.json_utils import save_user_to_json
+
 from keyboards.client_kb import kb_client
+from utils.json_utils import save_user_to_json
 
 logger = logging.getLogger(__name__)
 

@@ -48,6 +48,8 @@ from handlers.menu_call_check_entry_handler import check_call_command
 from handlers.menu_check_enrty_handler import menu_check_entry_command
 
 
+
+
 from handlers.cancel_handler import cancel_command, cancel_doctor_command, cancel_home_command
 from handlers.cancel_doctor_handler import checking_entry
 
@@ -122,15 +124,16 @@ dp.message.register(check_call_command, ClientRequests.checking_home, F.text == 
 #dp.message.register(ClientRequests.checking)
 dp.message.register(person_handler.get_person_polis, ClientRequests.checking)
 dp.message.register(menu_check_entry_command, F.text == 'ПРОВЕРКА ЗАПИСИ')
+dp.message.register(return_to_main_menu_handler.return_to_main_menu, F.text == 'вернуться в меню')
 
 
 
 
 
-@dp.message(F.text == 'вернуться в меню')
-async def return_to_menu(message: types.Message, state: FSMContext):
-    await state.clear()  # Сбрасываем состояние
-    await message.answer("Вы вернулись в главное меню.", reply_markup=kb_client)
+# @dp.message(F.text == 'вернуться в меню')
+# async def return_to_menu(message: types.Message, state: FSMContext):
+#     await state.clear()  # Сбрасываем состояние
+#     await message.answer("Вы вернулись в главное меню.", reply_markup=kb_client)
 
 
 

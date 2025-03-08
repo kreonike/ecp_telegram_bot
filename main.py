@@ -4,6 +4,7 @@ import json
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.client import telegram
 from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.dispatcher import router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -44,6 +45,7 @@ from handlers.menu_entry_handler import spec_command
 from handlers.menu_doctor_check_entry_handler import check_doctor_command
 from handlers.menu_call_check_entry_handler import check_call_command
 #from handlers.call_checking_home_handler import checking_call_home
+from handlers.menu_check_enrty_handler import menu_check_entry_command
 
 
 from handlers.cancel_handler import cancel_command, cancel_doctor_command, cancel_home_command
@@ -54,6 +56,9 @@ from keyboards.client_kb import (
 )
 from states.states import ClientRequests
 from utils.json_utils import save_user_to_json
+
+from aiogram import Bot, Dispatcher
+
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -71,6 +76,7 @@ session = AiohttpSession(
 bot = Bot(token=bot_token, session=session)
 #dp = Dispatcher(storage=redis_storage)  # Используем RedisStorage
 dp = Dispatcher()
+
 
 
 # Версия и создатель
@@ -115,14 +121,10 @@ dp.message.register(check_call_command, F.text == 'ПРОВЕРКА ВЫЗОВА
 dp.message.register(check_call_command, ClientRequests.checking_home, F.text == 'ЗАПИСЬ К ВРАЧУ')
 #dp.message.register(ClientRequests.checking)
 dp.message.register(person_handler.get_person_polis, ClientRequests.checking)
+dp.message.register(menu_check_entry_command, F.text == 'ПРОВЕРКА ЗАПИСИ')
 
 
 
-
-async def return_to_main_menu(message: types.Message, state: FSMContext):
-    await state.clear()
-    await message.answer('Выберите раздел:', reply_markup=kb_client)
-    logger.info("Пользователь возвращён в главное меню")
 
 
 @dp.message(F.text == 'вернуться в меню')
@@ -132,91 +134,42 @@ async def return_to_menu(message: types.Message, state: FSMContext):
 
 
 
+async def main():
+    await dp.start_polling(bot, skip_updates=True)
 
+if __name__ == '__main__':
+    import asyncio
+    asyncio.run(main())
 
+# не реализованный функционал
 
-@dp.message(Command(commands=["entry"]))
-async def write_command(message: types.Message):
-    await message.answer(version, reply_markup=kb_client)
-
-
-@dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ')
-async def cancel_command(message: types.Message, state: FSMContext):
-    await message.reply('Запись куда хотите проверить ?', reply_markup=check_client)
-
-
-# @dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
+# @dp.message(ClientRequests.cancel_home)
 # async def cancel_command(message: types.Message, state: FSMContext):
-#     await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ', reply_markup=menu_client)
-#     await state.set_state(ClientRequests.checking)
-
-# @dp.message(F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
-# async def cancel_command(message: types.Message, state: FSMContext):
-#     await bot.send_message(message.from_user.id, 'Введите идентификатор: ', reply_markup=menu_client)
-#     await state.set_state(ClientRequests.checking_home)
-
-
-# @dp.message(ClientRequests.checking_home)
-# async def checking(message: types.Message, state: FSMContext):
 #     mess = message.text
-#     logger.info(f"Получено сообщение: {mess}")
+#     print(mess)
+#     status_home_delete = home_delete.home_delete(mess)
+#     logging.info(f' status_home_delete: {status_home_delete}')
 #
-#     # Обработка команды "вернуться в меню"
 #     if mess == 'вернуться в меню':
-#         logger.info("Пользователь вернулся в главное меню")
-#         await return_to_main_menu(message, state)
-#         return
+#         await message.reply('выберите раздел', reply_markup=kb_client)
+#         await state.clear()
 #
-#     # Проверка, что введены только цифры
-#     if not mess.isdigit():
-#         await message.reply('Неверный ввод. Вводите только цифры, без символов и пробелов.')
-#         return
+#     elif status_home_delete['error_code'] == 0:
+#         await bot.send_message(message.from_user.id, 'Вызов на дом ОТМЕНЁН', reply_markup=menu_client)
+#         await message.reply('выберите раздел', reply_markup=kb_client)
+#         await state.clear()
 #
-#     entry_data_home = home_status.entry_status_home(mess)
-#     print(f'получено entry_data_home {entry_data_home}')
+#     elif status_home_delete['error_code'] == 6:
+#         await bot.send_message(message.from_user.id, 'Неверный идентификатор', reply_markup=menu_client)
 #
-#     status_call = {1: 'новый', 2: 'отказ', 3: 'Одобрен врачом', 4: 'Обслужен', 5: 'Отменен', 6: 'Назначен врач'}
 #
-#     for entry in entry_data_home['data']:
-#         await message.reply(
-#             f"Идентификатор вызова: {mess}\n"
-#             f"Вызов запланирован на: {entry['HomeVisit_setDT'].split()[0]}\n"
-#             f"Адрес: {entry['Address_Address']}\n"
-#             f"Телефон: {entry['HomeVisit_Phone']}\n"
-#             f"Статус вызова: {status_call[int(entry['HomeVisitWhoCall_id'])]}",
-#             parse_mode=None
-#         )
-#
-#     await return_to_main_menu(message, state)
-
-
-@dp.message(ClientRequests.cancel_home)
-async def cancel_command(message: types.Message, state: FSMContext):
-    mess = message.text
-    print(mess)
-    status_home_delete = home_delete.home_delete(mess)
-    logging.info(f' status_home_delete: {status_home_delete}')
-
-    if mess == 'вернуться в меню':
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        await state.clear()
-
-    elif status_home_delete['error_code'] == 0:
-        await bot.send_message(message.from_user.id, 'Вызов на дом ОТМЕНЁН', reply_markup=menu_client)
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        await state.clear()
-
-    elif status_home_delete['error_code'] == 6:
-        await bot.send_message(message.from_user.id, 'Неверный идентификатор', reply_markup=menu_client)
-
-
-    else:
-        print('test')
+#     else:
+#         print('test')
 
 
 
 
-# async def return_to_main_menu(message: types.Message, state: FSMContext):
+# async def vu(message: types.Message, state: FSMContext):
 #     await state.clear()
 #     await message.answer('Выберите раздел:', reply_markup=kb_client)
 #     logger.info("Пользователь возвращён в главное меню")
@@ -224,15 +177,25 @@ async def cancel_command(message: types.Message, state: FSMContext):
 
 
 
+# работает ли без этого ?
 
-changelog = 'реализована отмена'
+# async def return_to_main_menu(message: types.Message, state: FSMContext):
+#     await state.clear()
+#     await message.answer('Выберите раздел:', reply_markup=kb_client)
+#     logger.info("Пользователь возвращён в главное меню")
+#
+#
+# @dp.message(F.text == 'вернуться в меню')
+# async def return_to_menu(message: types.Message, state: FSMContext):
+#     await state.clear()  # Сбрасываем состояние
+#     await message.answer("Вы вернулись в главное меню.", reply_markup=kb_client)
+#
+# #
+# #
+# #
+# @dp.message(Command(commands=["entry"]))
+# async def write_command(message: types.Message):
+#     await message.answer(version, reply_markup=kb_client)
 
-
-async def main():
-    await dp.start_polling(bot, skip_updates=True)
-
-if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
 
 

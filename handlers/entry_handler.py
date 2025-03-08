@@ -22,7 +22,7 @@ async def entry_person(message: types.Message, state: FSMContext):
 
 
     elif message_entry == 'ДА':
-        from config.config import save_check_error, load_check_error
+        from utils.json_temp_data import save_check_error, load_check_error
         check_error = load_check_error()
         print(f' check_error', check_error)
         if check_error == 6:
@@ -50,7 +50,7 @@ async def entry_person(message: types.Message, state: FSMContext):
             print(f' entry_data: {entry_data}')
             logging.info(f' ЗАПИСЬ {entry_data}')
             await message.answer(
-                                   f" ВЫ УСПЕШНО ЗАПИСАНЫ к:"
+                                   f" ВЫ ЗАПИСАНЫ к:\n"
                                    f" {entry_data[1]['data']['TimeTable'][0]['Post_name']}"
                                    f" на: {entry_data[1]['data']['TimeTable'][0]['TimeTable_begTime']}\n"
                                    f" приходите к назначенному времени сразу к врачу,\n в регистратуру идти не нужно",

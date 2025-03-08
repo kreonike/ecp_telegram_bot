@@ -136,7 +136,7 @@ async def get_spec(message: types.Message, state: FSMContext):
 
             # print(f' !! {post_id}')
             print(f't1: {spec_dict_final}')
-            from config.config import save_global_spec_dict_final, load_global_spec_dict_final, save_postid, load_postid
+            from utils.json_temp_data import save_global_spec_dict_final, load_global_spec_dict_final, save_postid, load_postid
             #current_value = load_variable()
             save_global_spec_dict_final(spec_dict_final)
             save_postid(post_id)

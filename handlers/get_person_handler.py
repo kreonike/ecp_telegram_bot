@@ -59,7 +59,7 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         print(check_entry_data)
         print(date_whithout_time)
 
-        from config.config import save_check_error, load_check_error
+        from utils.json_temp_data import save_check_error, load_check_error
         #global check_error
         check_error = 0
         save_check_error(check_error)

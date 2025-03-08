@@ -26,7 +26,7 @@ import time_delete
 from config.config import bot_token
 from handlers import (info_handler, worker_handler, start_handler, person_handler,
                       doctor_handler, return_to_main_menu_handler, spec_handler, po1_handler,
-                      po2_handler, po3_handler, po4_handler, time_handler, cancel_handler)
+                      po2_handler, po3_handler, po4_handler, time_handler, cancel_handler, call_home_handler, call_checking_home_handler)
 from handlers.doctor_handler import get_doctor
 from handlers.spec_handler import get_spec
 from handlers.time_handler import get_person_time
@@ -39,6 +39,12 @@ from handlers.call_phone import checking_phone
 from handlers.call_address import checking_address
 from handlers.call_reason_handler import checking_reason
 from handlers.call_entry_question_handler import get_person_question
+from handlers.call_home_handler import call_home
+from handlers.menu_entry_handler import spec_command
+from handlers.menu_doctor_check_entry_handler import check_doctor_command
+from handlers.menu_call_check_entry_handler import check_call_command
+#from handlers.call_checking_home_handler import checking_call_home
+
 
 from handlers.cancel_handler import cancel_command, cancel_doctor_command, cancel_home_command
 from handlers.cancel_doctor_handler import checking_entry
@@ -77,7 +83,7 @@ bot_birthday = '13.10.2022 15:14'
 dp.message.register(start_handler.start_command, Command("start"))
 dp.message.register(info_handler.info_command, F.text == "АДРЕСА И ТЕЛЕФОНЫ")
 dp.message.register(worker_handler.worker_command, F.text == "РЕЖИМ РАБОТЫ")
-dp.message.register(person_handler.get_person_polis, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
+#dp.message.register(person_handler.get_person_polis, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
 dp.message.register(po1_handler.polyclinic_1, F.text == 'ПОЛИКЛИНИКА 1')
 dp.message.register(po2_handler.polyclinic_2, F.text == 'ПОЛИКЛИНИКА 2')
 dp.message.register(po3_handler.polyclinic_3, F.text == 'ПОЛИКЛИНИКА 3')
@@ -99,6 +105,16 @@ dp.message.register(checking_address, ClientRequests.call_address)
 dp.message.register(checking_phone, ClientRequests.phone)
 dp.message.register(checking_reason, ClientRequests.reason)
 dp.message.register(get_person_question, ClientRequests.call_entry_question)
+dp.message.register(call_home, F.text == 'ВЫЗОВ ВРАЧА НА ДОМ')
+#dp.message.register(checking_call_home, ClientRequests.checking_home)
+dp.message.register(call_checking_home_handler.checking_call_home, ClientRequests.call_checking)
+dp.message.register(spec_command, F.text == 'ЗАПИСЬ К ВРАЧУ')
+
+dp.message.register(check_doctor_command, F.text == 'ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
+dp.message.register(check_call_command, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
+dp.message.register(check_call_command, ClientRequests.checking_home, F.text == 'ЗАПИСЬ К ВРАЧУ')
+#dp.message.register(ClientRequests.checking)
+dp.message.register(person_handler.get_person_polis, ClientRequests.checking)
 
 
 
@@ -115,11 +131,6 @@ async def return_to_menu(message: types.Message, state: FSMContext):
     await message.answer("Вы вернулись в главное меню.", reply_markup=kb_client)
 
 
-# Обработчик текстового сообщения "ВЫЗОВ ВРАЧА НА ДОМ"
-@dp.message(F.text == "ВЫЗОВ ВРАЧА НА ДОМ")
-async def call_home(message: types.Message, state: FSMContext):
-    await message.answer('Введите свой полис ОМС: ', reply_markup=menu_client)
-    await state.set_state(ClientRequests.call_checking)
 
 
 
@@ -129,61 +140,54 @@ async def write_command(message: types.Message):
     await message.answer(version, reply_markup=kb_client)
 
 
-@dp.message(F.text == 'ЗАПИСЬ К ВРАЧУ')
-async def spec_command(message: types.Message):
-    await message.reply('Выберите поликлинику', reply_markup=pol_client)
-
-
-
-
 @dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ')
 async def cancel_command(message: types.Message, state: FSMContext):
     await message.reply('Запись куда хотите проверить ?', reply_markup=check_client)
 
 
-@dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
-async def cancel_command(message: types.Message, state: FSMContext):
-    await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ', reply_markup=menu_client)
-    await state.set_state(ClientRequests.checking)
+# @dp.message(F.text == 'ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
+# async def cancel_command(message: types.Message, state: FSMContext):
+#     await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ', reply_markup=menu_client)
+#     await state.set_state(ClientRequests.checking)
 
-@dp.message(F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
-async def cancel_command(message: types.Message, state: FSMContext):
-    await bot.send_message(message.from_user.id, 'Введите идентификатор: ', reply_markup=menu_client)
-    await state.set_state(ClientRequests.checking_home)
+# @dp.message(F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
+# async def cancel_command(message: types.Message, state: FSMContext):
+#     await bot.send_message(message.from_user.id, 'Введите идентификатор: ', reply_markup=menu_client)
+#     await state.set_state(ClientRequests.checking_home)
 
 
-@dp.message(ClientRequests.checking_home)
-async def checking(message: types.Message, state: FSMContext):
-    mess = message.text
-    logger.info(f"Получено сообщение: {mess}")
-
-    # Обработка команды "вернуться в меню"
-    if mess == 'вернуться в меню':
-        logger.info("Пользователь вернулся в главное меню")
-        await return_to_main_menu(message, state)
-        return
-
-    # Проверка, что введены только цифры
-    if not mess.isdigit():
-        await message.reply('Неверный ввод. Вводите только цифры, без символов и пробелов.')
-        return
-
-    entry_data_home = home_status.entry_status_home(mess)
-    print(f'получено entry_data_home {entry_data_home}')
-
-    status_call = {1: 'новый', 2: 'отказ', 3: 'Одобрен врачом', 4: 'Обслужен', 5: 'Отменен', 6: 'Назначен врач'}
-
-    for entry in entry_data_home['data']:
-        await message.reply(
-            f"Идентификатор вызова: {mess}\n"
-            f"Вызов запланирован на: {entry['HomeVisit_setDT'].split()[0]}\n"
-            f"Адрес: {entry['Address_Address']}\n"
-            f"Телефон: {entry['HomeVisit_Phone']}\n"
-            f"Статус вызова: {status_call[int(entry['HomeVisitWhoCall_id'])]}",
-            parse_mode=None
-        )
-
-    await return_to_main_menu(message, state)
+# @dp.message(ClientRequests.checking_home)
+# async def checking(message: types.Message, state: FSMContext):
+#     mess = message.text
+#     logger.info(f"Получено сообщение: {mess}")
+#
+#     # Обработка команды "вернуться в меню"
+#     if mess == 'вернуться в меню':
+#         logger.info("Пользователь вернулся в главное меню")
+#         await return_to_main_menu(message, state)
+#         return
+#
+#     # Проверка, что введены только цифры
+#     if not mess.isdigit():
+#         await message.reply('Неверный ввод. Вводите только цифры, без символов и пробелов.')
+#         return
+#
+#     entry_data_home = home_status.entry_status_home(mess)
+#     print(f'получено entry_data_home {entry_data_home}')
+#
+#     status_call = {1: 'новый', 2: 'отказ', 3: 'Одобрен врачом', 4: 'Обслужен', 5: 'Отменен', 6: 'Назначен врач'}
+#
+#     for entry in entry_data_home['data']:
+#         await message.reply(
+#             f"Идентификатор вызова: {mess}\n"
+#             f"Вызов запланирован на: {entry['HomeVisit_setDT'].split()[0]}\n"
+#             f"Адрес: {entry['Address_Address']}\n"
+#             f"Телефон: {entry['HomeVisit_Phone']}\n"
+#             f"Статус вызова: {status_call[int(entry['HomeVisitWhoCall_id'])]}",
+#             parse_mode=None
+#         )
+#
+#     await return_to_main_menu(message, state)
 
 
 @dp.message(ClientRequests.cancel_home)
@@ -212,10 +216,10 @@ async def cancel_command(message: types.Message, state: FSMContext):
 
 
 
-async def return_to_main_menu(message: types.Message, state: FSMContext):
-    await state.clear()
-    await message.answer('Выберите раздел:', reply_markup=kb_client)
-    logger.info("Пользователь возвращён в главное меню")
+# async def return_to_main_menu(message: types.Message, state: FSMContext):
+#     await state.clear()
+#     await message.answer('Выберите раздел:', reply_markup=kb_client)
+#     logger.info("Пользователь возвращён в главное меню")
 
 
 

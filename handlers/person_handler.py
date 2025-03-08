@@ -1,5 +1,9 @@
 from aiogram import types
 from aiogram.fsm.context import FSMContext
+
+import entry_status
+import search_person
+import search_polis
 from keyboards.client_kb import menu_client, ident_client, kb_client
 from states.states import ClientRequests
 import logging
@@ -20,17 +24,33 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         await message.reply('Неверный ввод, вводите только цифры, без символов и пробелов',
                             reply_markup=menu_client)
     elif message_polis.isdigit() == True:
-        await bot.send_message(message.from_user.id, 'Идёт поиск, подождите ',
+        await message.answer('Идёт поиск, подождите ',
                                reply_markup=menu_client)
         polis_data = search_polis.search_polis(message_polis)
+        print('f 1', polis_data)
         person = search_person.search_person(polis_data['data'][0]['Person_id'])
+        print('f 2', person)
         person_id = person['data'][0]['Person_id']
+        print('f 3', person_id)
         check_entry_data = entry_status.entry_status(person_id)
-        data = await state.get_data()
-        message_time = data.get('message_time')
-        date_whithout_time = message_time.partition(' ')[0]
-        global check_error
+        print('f 4', check_entry_data)
+
+        # data = await state.get_data()
+        # message_time = data.get('message_time')
+        time_table_beg_time = check_entry_data['data']['TimeTable'][0]['TimeTable_begTime']
+
+
+        date_whithout_time = time_table_beg_time.partition(' ')[0]
+
+        from utils.json_temp_data import load_postid
+        post_id = load_postid()
+
+        # check_error = load_check_error()
+
+        #global check_error
         check_error = 0
+
+
         for j in check_entry_data['data']['TimeTable']:
             if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[0] == date_whithout_time:
                 check_error = 6
@@ -44,5 +64,5 @@ async def get_person_polis(message: types.Message, state: FSMContext):
             f' Имя: {PersonFirName_FirName}\n'
             f' Отчество: {PersonSecName_SecName}\n'
             f' Дата рождения: {PersonBirthDay_BirthDay}\n')
-        await bot.send_message(message.from_user.id, 'Это Вы ?', reply_markup=ident_client)
+        await message.answer('Это Вы ?', reply_markup=ident_client)
         await state.set_state(ClientRequests.entry)

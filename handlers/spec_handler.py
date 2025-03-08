@@ -3,6 +3,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 import base_ecp
+#import config.config
+
 from base_ecp import medspecoms_id
 print(medspecoms_id)
 
@@ -10,9 +12,11 @@ import search_spec_doctor
 from keyboards.client_kb import spec_client, kb_client
 # from main import spec_check
 from states.states import ClientRequests
+
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 
 def spec_check(spec, base_ecp_medspecoms_id):
@@ -21,7 +25,7 @@ def spec_check(spec, base_ecp_medspecoms_id):
 
 async def get_spec(message: types.Message, state: FSMContext):
     await message.answer('Идёт поиск, доступных для записи врачей, ожидайте')
-    global spec_dict_final
+    #global spec_dict_final
     #await get_doctor(message, state, spec_dict_final)
     # print(f' на входе в get_spec {spec_dict_final}')
     question_spec = message.text
@@ -80,7 +84,7 @@ async def get_spec(message: types.Message, state: FSMContext):
 
             print(f' HHHHH data_lpu_person: {data_lpu_person}')
 
-            global post_id
+            #global post_id
 
             for key in data_lpu_person:
                 post_id = key['Post_id']
@@ -88,7 +92,7 @@ async def get_spec(message: types.Message, state: FSMContext):
             # print(post_id)
 
             if data_lpu_person == []:
-                await bot.send_message(message.from_user.id,
+                await message.answer(
                                        'К данному специалисту запись на 14 ближайших дней отсутствует',
                                        reply_markup=kb_client)
                 await state.set_state(ClientRequests.main_menu)
@@ -132,3 +136,24 @@ async def get_spec(message: types.Message, state: FSMContext):
 
             # print(f' !! {post_id}')
             print(f't1: {spec_dict_final}')
+            from config.config import save_global_spec_dict_final, load_global_spec_dict_final, save_postid, load_postid
+            #current_value = load_variable()
+            save_global_spec_dict_final(spec_dict_final)
+            save_postid(post_id)
+
+
+
+
+
+
+            #print(f' final', config.config.global_spec_dict_final)
+
+
+
+
+
+
+
+
+# def print_global_var():
+#     print("Global var in file2:", config.spec_dict_final)

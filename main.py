@@ -24,9 +24,15 @@ import search_time
 import search_time2
 import time_delete
 from config.config import bot_token
-from handlers import info_handler, worker_handler, start_handler, person_handler, doctor_handler, return_to_main_menu_handler, spec_handler, po1_handler, po2_handler, po3_handler, po4_handler
+from handlers import (info_handler, worker_handler, start_handler, person_handler,
+                      doctor_handler, return_to_main_menu_handler, spec_handler, po1_handler,
+                      po2_handler, po3_handler, po4_handler, time_handler)
 from handlers.doctor_handler import get_doctor
 from handlers.spec_handler import get_spec
+from handlers.time_handler import get_person_time
+from handlers.get_person_handler import get_person_polis
+from handlers.entry_handler import entry_person
+
 from keyboards.client_kb import (
     kb_client, spec_client, pol_client, menu_client, ident_client, choise_client, check_client
 )
@@ -52,7 +58,7 @@ dp = Dispatcher()
 
 
 # Версия и создатель
-version = '3.0.2 release'
+version = '5.4.8 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
 
@@ -67,6 +73,12 @@ dp.message.register(po2_handler.polyclinic_2, F.text == 'ПОЛИКЛИНИКА 
 dp.message.register(po3_handler.polyclinic_3, F.text == 'ПОЛИКЛИНИКА 3')
 dp.message.register(po4_handler.polyclinic_4, F.text == 'ПОЛИКЛИНИКА 4')
 dp.message.register(get_spec, ClientRequests.spec)
+dp.message.register(get_doctor, ClientRequests.doctor)
+dp.message.register(get_person_time, ClientRequests.time)
+dp.message.register(get_person_polis, ClientRequests.person)
+#dp.message.register(get_delete, ClientRequests.entry_delete)
+dp.message.register(entry_person, ClientRequests.entry)
+
 
 
 
@@ -450,250 +462,188 @@ def del_entry(message_delete, entry_data):
 
 
 
-@dp.message(ClientRequests.doctor)
-async def get_doctor(message: types.Message, state: FSMContext):
-    global spec_dict_final
-    print('test test test')
-    print(f't2: {spec_dict_final}')
-
-    mess = message.text
-    print(f' message_handler() mess: {mess}')
-
-    if mess == 'вернуться в меню':
-        await state.set_state(ClientRequests.main_menu)
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        # spec_dict_final = {}
-        await state.clear()
-
-    else:
-        await bot.send_message(message.from_user.id,
-                               'Идёт поиск сводных дат для записи, это может занять много времени, пожалуйста ожидайте..')
-        global MedStaffFact_id
-
-        MedStaffFact_id = (spec_dict_final[mess])
-        await state.update_data(MedStaffFact_id=MedStaffFact_id)  ################
-
-        print(f' @@ MedStaffFact_id: {MedStaffFact_id}')
-
-        """поиск даты"""
-        data_date_dict = {}
-        data_date_dict = search_date.search_date(MedStaffFact_id)
-        print(f' это дата лист из функции: {data_date_dict}')
-
-        data_time_final = search_time.search_time(MedStaffFact_id, data_date_dict)
-        print(f' data_time_final = {data_time_final}')
-
-        if not data_time_final:
-            # Если свободных дат нет
-            await message.answer('На ближайшие 14 дней нет свободных дат к данному специалисту.')
-            await return_to_main_menu(message, state)
-        else:
-
-            builder = ReplyKeyboardBuilder()
-
-            # Добавляем кнопку "вернуться в меню" наверху (на всю ширину ряда)
-            builder.row(KeyboardButton(text="вернуться в меню"))
-
-            # Добавляем остальные кнопки из data_time_final
-            for i in data_time_final:
-                builder.add(KeyboardButton(text=i['TimeTableGraf_begTime']))
-
-            # Группируем все кнопки ниже "вернуться в меню" по 2 в строке
-            builder.adjust(1, 2)  # Первый ряд (1 кнопка), остальные по 2
-
-            markup = builder.as_markup(resize_keyboard=True)
-            keyboard = builder.as_markup(resize_keyboard=True)
-
-            # Отправляем сообщение с клавиатурой
-            await message.answer(
-                'На ближайшие 14 дня есть следующие свободные даты:\n'
-                'Выберите желаемую дату приёма:',
-                reply_markup=builder.as_markup(resize_keyboard=True)
-            )
-            await state.set_state(ClientRequests.time)
-
-            # Логирование
-            logger.info(f"MedStaffFact_id: {MedStaffFact_id}")
 
 
 
-@dp.message(ClientRequests.time)
-async def get_person_time(message: types.Message, state: FSMContext):
-    message_time = message.text
-    print(f' message_time: {message_time}')
-    await state.update_data(time=message_time)
-
-    if message_time == 'вернуться в меню':
-        await state.set_state(ClientRequests.main_menu)
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        spec_dict_final = {}
-        await state.clear()
-
-    else:
-        await bot.send_message(message.from_user.id, 'Проверка возможности записи, ожидайте')
-        global data_time_final
-        data = await state.get_data()
-        MedStaffFact_id = data.get('MedStaffFact_id')
-
-        print(f' message_time в else: {message_time}')
-        data_time_final2 = search_time2.search_time2(MedStaffFact_id, message_time)
-        print(f' data_time_final2: {data_time_final2}')
-        TimeTableGraf_id = data_time_final2[message_time]
-
-        print(f' TimeTableGraf_id !!!!!!!!: {TimeTableGraf_id}')
-        print(f' message_time: {message_time}')
-        await state.update_data(time=message_time)
-        await state.update_data(TimeTableGraf_id=TimeTableGraf_id)
-        await state.update_data(message_time=message_time)
-        await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ',
-                               reply_markup=menu_client)
-        await state.set_state(ClientRequests.person)
-
-
-@dp.message(ClientRequests.person)
-async def get_person_polis(message: types.Message, state: FSMContext):
-    message_polis = message.text
-    print(f' message_polis: {message_polis}')
-
-    if message_polis == 'вернуться в меню':
-        print('@@вернуться в главное меню')
-        await state.set_state(ClientRequests.main_menu)
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        spec_dict_final = {}
-        await state.clear()
-
-    elif len(message_polis) != 16:
-        await message.reply('Неверный ввод, введите 16 цифр номера полиса',
-                            reply_markup=menu_client)
-
-    elif message_polis.isdigit() == False:
-        await message.reply('Неверный ввод, вводите только цифры, без символов и пробелов',
-                            reply_markup=menu_client)
-
-
-    elif message_polis.isdigit() == True:
-        await bot.send_message(message.from_user.id, 'Идёт поиск, подождите ',
-                               reply_markup=menu_client)
-        polis_data = search_polis.search_polis(message_polis)
-        print(f' polis_num из функции: {polis_data}')
-        person = search_person.search_person(polis_data['data'][0]['Person_id'])
-        person_id = person['data'][0]['Person_id']
-        print(f' получена из функции: {person_id}')
-
-        print('=========ПРОВЕРКА=========')
-        print(f' post_id для check: {post_id}')
-        print(f' Person_id: {person_id}')
-        check_entry_data = entry_status.entry_status(person_id)
-        print(check_entry_data)
-
-        data = await state.get_data()
-        message_time = data.get('message_time')
-        print(message_time)
-        date_whithout_time = message_time.partition(' ')[0]
-
-        print(post_id)
-        print(check_entry_data)
-        print(date_whithout_time)
-        global check_error
-        check_error = 0
-        for j in check_entry_data['data']['TimeTable']:
-            if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[0] == date_whithout_time:
-                print('НАЙДЕНО СОВПАДЕНИЕ')
-                print('запись к одному и тому же специалисту на один и тот же день запрещена')
-                check_error = 6
-
-            else:
-                print('совпадений не найдено')
-
-        print(check_error)
-        await state.update_data(person_id=person_id)
-
-        PersonSurName_SurName = person['data'][0]['PersonSurName_SurName']
-        PersonFirName_FirName = person['data'][0]['PersonFirName_FirName']
-        PersonSecName_SecName = person['data'][0]['PersonSecName_SecName']
-        PersonBirthDay_BirthDay = person['data'][0]['PersonBirthDay_BirthDay']
-
-        await message.reply(
-            f' Фамилия: {PersonSurName_SurName}\n'
-            f' Имя: {PersonFirName_FirName}\n'
-            f' Отчество: {PersonSecName_SecName}\n'
-            f' Дата рождения: {PersonBirthDay_BirthDay}\n')
-
-        await bot.send_message(message.from_user.id, 'Это Вы ?', reply_markup=ident_client)
-
-        await state.set_state(ClientRequests.entry)
-
-
-@dp.message(ClientRequests.entry)
-async def get_person(message: types.Message, state: FSMContext):
-    message_entry = message.text
-    print(message_entry)
-
-    if message_entry == 'вернуться в меню':
-        print('вернуться %%%%%%% в главное меню')
-        await state.set_state(ClientRequests.main_menu)
-        await message.reply('выберите раздел', reply_markup=kb_client)
-        spec_dict_final = {}
-        await state.clear()
+# @dp.message(ClientRequests.time)
+# async def get_person_time(message: types.Message, state: FSMContext):
+#     message_time = message.text
+#     print(f' message_time: {message_time}')
+#     await state.update_data(time=message_time)
+#
+#     if message_time == 'вернуться в меню':
+#         await state.set_state(ClientRequests.main_menu)
+#         await message.reply('выберите раздел', reply_markup=kb_client)
+#         spec_dict_final = {}
+#         await state.clear()
+#
+#     else:
+#         await bot.send_message(message.from_user.id, 'Проверка возможности записи, ожидайте')
+#         global data_time_final
+#         data = await state.get_data()
+#         MedStaffFact_id = data.get('MedStaffFact_id')
+#
+#         print(f' message_time в else: {message_time}')
+#         data_time_final2 = search_time2.search_time2(MedStaffFact_id, message_time)
+#         print(f' data_time_final2: {data_time_final2}')
+#         TimeTableGraf_id = data_time_final2[message_time]
+#
+#         print(f' TimeTableGraf_id !!!!!!!!: {TimeTableGraf_id}')
+#         print(f' message_time: {message_time}')
+#         await state.update_data(time=message_time)
+#         await state.update_data(TimeTableGraf_id=TimeTableGraf_id)
+#         await state.update_data(message_time=message_time)
+#         await bot.send_message(message.from_user.id, 'Введите свой полис ОМС: ',
+#                                reply_markup=menu_client)
+#         await state.set_state(ClientRequests.person)
+#
+#
+# @dp.message(ClientRequests.person)
+# async def get_person_polis(message: types.Message, state: FSMContext):
+#     message_polis = message.text
+#     print(f' message_polis: {message_polis}')
+#
+#     if message_polis == 'вернуться в меню':
+#         print('@@вернуться в главное меню')
+#         await state.set_state(ClientRequests.main_menu)
+#         await message.reply('выберите раздел', reply_markup=kb_client)
+#         spec_dict_final = {}
+#         await state.clear()
+#
+#     elif len(message_polis) != 16:
+#         await message.reply('Неверный ввод, введите 16 цифр номера полиса',
+#                             reply_markup=menu_client)
+#
+#     elif message_polis.isdigit() == False:
+#         await message.reply('Неверный ввод, вводите только цифры, без символов и пробелов',
+#                             reply_markup=menu_client)
+#
+#
+#     elif message_polis.isdigit() == True:
+#         await bot.send_message(message.from_user.id, 'Идёт поиск, подождите ',
+#                                reply_markup=menu_client)
+#         polis_data = search_polis.search_polis(message_polis)
+#         print(f' polis_num из функции: {polis_data}')
+#         person = search_person.search_person(polis_data['data'][0]['Person_id'])
+#         person_id = person['data'][0]['Person_id']
+#         print(f' получена из функции: {person_id}')
+#
+#         print('=========ПРОВЕРКА=========')
+#         from config.config import save_global_spec_dict_final, load_global_spec_dict_final, save_postid, load_postid
+#         post_id = load_postid()
+#         print(f' post_id для check: {post_id}')
+#         print(f' Person_id: {person_id}')
+#         check_entry_data = entry_status.entry_status(person_id)
+#         print(check_entry_data)
+#
+#         data = await state.get_data()
+#         message_time = data.get('message_time')
+#         print(message_time)
+#         date_whithout_time = message_time.partition(' ')[0]
+#
+#         print(post_id)
+#         print(check_entry_data)
+#         print(date_whithout_time)
+#         global check_error
+#         check_error = 0
+#         for j in check_entry_data['data']['TimeTable']:
+#             if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[0] == date_whithout_time:
+#                 print('НАЙДЕНО СОВПАДЕНИЕ')
+#                 print('запись к одному и тому же специалисту на один и тот же день запрещена')
+#                 check_error = 6
+#
+#             else:
+#                 print('совпадений не найдено')
+#
+#         print(check_error)
+#         await state.update_data(person_id=person_id)
+#
+#         PersonSurName_SurName = person['data'][0]['PersonSurName_SurName']
+#         PersonFirName_FirName = person['data'][0]['PersonFirName_FirName']
+#         PersonSecName_SecName = person['data'][0]['PersonSecName_SecName']
+#         PersonBirthDay_BirthDay = person['data'][0]['PersonBirthDay_BirthDay']
+#
+#         await message.reply(
+#             f' Фамилия: {PersonSurName_SurName}\n'
+#             f' Имя: {PersonFirName_FirName}\n'
+#             f' Отчество: {PersonSecName_SecName}\n'
+#             f' Дата рождения: {PersonBirthDay_BirthDay}\n')
+#
+#         await bot.send_message(message.from_user.id, 'Это Вы ?', reply_markup=ident_client)
+#
+#         await state.set_state(ClientRequests.entry)
 
 
-    elif message_entry == 'ДА':
-        print(check_error)
-        if check_error == 6:
-
-            await state.set_state(ClientRequests.main_menu)
-            await message.reply(
-                'запись к одному и тому же специалисту на один и тот же день запрещена')
-            await state.set_state(ClientRequests.main_menu)
-            await message.reply('выберите раздел', reply_markup=kb_client)
-            spec_dict_final = {}
-            await state.clear()
-
-        elif check_error == 0:
-            data = await state.get_data()
-            time = data.get('time')
-            TimeTableGraf_id = data.get('TimeTableGraf_id')
-            person_id = data.get('person_id')
-
-            print(f' message_time: {time}')
-            print(f' TimeTableGraf_id: {TimeTableGraf_id}')
-            print(f' person_id: {person_id}')
-
-            entry_data = search_entry.search_entry(person_id, TimeTableGraf_id)
-            print(f' entry_data: {entry_data}')
-            logging.info(f' ЗАПИСЬ {entry_data}')
-            await bot.send_message(message.from_user.id,
-                                   f" ВЫ УСПЕШНО ЗАПИСАНЫ к:"
-                                   f" {entry_data[1]['data']['TimeTable'][0]['Post_name']}"
-                                   f" на: {entry_data[1]['data']['TimeTable'][0]['TimeTable_begTime']}\n"
-                                   f" приходите к назначенному времени сразу к врачу,\n в регистратуру идти не нужно",
-                                   reply_markup=kb_client)
-
-            await state.set_state(ClientRequests.main_menu)
-            spec_dict_final = {}
-            await state.clear()
-
-
-        else:
-            await bot.send_message(message.from_user.id,
-                                   f' возникла какая-то ошибка, сообщите о пробеме @rapot'
-                                   f' или попытайтесь позже', reply_markup=menu_client)
-
-    elif message_entry == 'НЕТ':
-
-        await state.set_state(ClientRequests.main_menu)
-        await bot.send_message(message.from_user.id, 'выберите раздел',
-                               reply_markup=kb_client)
-        spec_dict_final = {}
-        await state.clear()
-        # await ClientRequests.next()
-
-
-    elif message_entry != 'ДА' or message_entry != 'НЕТ' or message_entry != 'вернуться в меню':
-        await message.reply('Повторите ввод, ДА или НЕТ нажанием на кнопки или словами')
-
-    else:
-        await message.reply('Повторите ввод, ДА или НЕТ нажанием на кнопки или словами')
+# @dp.message(ClientRequests.entry)
+# async def get_person(message: types.Message, state: FSMContext):
+#     message_entry = message.text
+#     print(message_entry)
+#
+#     if message_entry == 'вернуться в меню':
+#         print('вернуться %%%%%%% в главное меню')
+#         await state.set_state(ClientRequests.main_menu)
+#         await message.reply('выберите раздел', reply_markup=kb_client)
+#         spec_dict_final = {}
+#         await state.clear()
+#
+#
+#     elif message_entry == 'ДА':
+#         print(check_error)
+#         if check_error == 6:
+#
+#             await state.set_state(ClientRequests.main_menu)
+#             await message.reply(
+#                 'запись к одному и тому же специалисту на один и тот же день запрещена')
+#             await state.set_state(ClientRequests.main_menu)
+#             await message.reply('выберите раздел', reply_markup=kb_client)
+#             spec_dict_final = {}
+#             await state.clear()
+#
+#         elif check_error == 0:
+#             data = await state.get_data()
+#             time = data.get('time')
+#             TimeTableGraf_id = data.get('TimeTableGraf_id')
+#             person_id = data.get('person_id')
+#
+#             print(f' message_time: {time}')
+#             print(f' TimeTableGraf_id: {TimeTableGraf_id}')
+#             print(f' person_id: {person_id}')
+#
+#             entry_data = search_entry.search_entry(person_id, TimeTableGraf_id)
+#             print(f' entry_data: {entry_data}')
+#             logging.info(f' ЗАПИСЬ {entry_data}')
+#             await bot.send_message(message.from_user.id,
+#                                    f" ВЫ УСПЕШНО ЗАПИСАНЫ к:"
+#                                    f" {entry_data[1]['data']['TimeTable'][0]['Post_name']}"
+#                                    f" на: {entry_data[1]['data']['TimeTable'][0]['TimeTable_begTime']}\n"
+#                                    f" приходите к назначенному времени сразу к врачу,\n в регистратуру идти не нужно",
+#                                    reply_markup=kb_client)
+#
+#             await state.set_state(ClientRequests.main_menu)
+#             spec_dict_final = {}
+#             await state.clear()
+#
+#
+#         else:
+#             await bot.send_message(message.from_user.id,
+#                                    f' возникла какая-то ошибка, сообщите о пробеме @rapot'
+#                                    f' или попытайтесь позже', reply_markup=menu_client)
+#
+#     elif message_entry == 'НЕТ':
+#
+#         await state.set_state(ClientRequests.main_menu)
+#         await bot.send_message(message.from_user.id, 'выберите раздел',
+#                                reply_markup=kb_client)
+#         spec_dict_final = {}
+#         await state.clear()
+#         # await ClientRequests.next()
+#
+#
+#     elif message_entry != 'ДА' or message_entry != 'НЕТ' or message_entry != 'вернуться в меню':
+#         await message.reply('Повторите ввод, ДА или НЕТ нажанием на кнопки или словами')
+#
+#     else:
+#         await message.reply('Повторите ввод, ДА или НЕТ нажанием на кнопки или словами')
 
 
 

@@ -1,34 +1,49 @@
 import logging
-from config.config import bot_token, login_ecp, password_ecp
 import requests
 import authorization
 import base_ecp
 
-lpu_id = 'Lpu_id=2762'
-def search_doctor(d_final):
-    fast_id = base_ecp.medspecoms_id.values()
-    print(f' передано значение: {d_final}')
-    # logging.info(f' d_final {d_final}')
-    ###мне вот эта конструкция не нравится
+# Константы
+LPU_ID = '2762'
+BASE_URL = 'http://ecp.mznn.ru/api/MedStaffFact/MedStaffFactByMO'
 
-    id_fast = 1
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
-    ###############################
 
-    ##авторизация
-    authorization.authorization()
+def fetch_doctors_by_specialty(specialty_id, session):
+    url = f'{BASE_URL}?MedSpecOms_id={specialty_id}&Lpu_id={LPU_ID}&sess_id={session}'
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(f'Ошибка при получении данных о врачах: {e}')
+        raise
+
+
+def find_doctor_by_surname(doctors_data, surname):
+    for doctor in doctors_data.get('data', []):
+        if doctor.get('PersonSurName_SurName') == surname:
+            return doctor
+    return None
+
+
+def search_doctor(surname):
+    logging.info(f'Поиск врача по фамилии: {surname}')
+
+    # Авторизация
     session = authorization.authorization()
 
-    for i in fast_id:
-        search_fast_id = f'http://ecp.mznn.ru/api/MedStaffFact/MedStaffFactByMO?MedSpecOms_id={i}&' \
-                         f'{lpu_id}&sess_id={session}'
+    # Получение списка специальностей
+    specialty_ids = base_ecp.medspecoms_id.values()
 
-        result_fast_id = requests.get(search_fast_id)
-        data_fast_id = result_fast_id.json()
+    # Поиск врача по фамилии
+    for specialty_id in specialty_ids:
+        doctors_data = fetch_doctors_by_specialty(specialty_id, session)
+        doctor = find_doctor_by_surname(doctors_data, surname)
+        if doctor:
+            logging.info(f'Врач найден: {doctor}')
+            return doctor
 
-        for k in data_fast_id['data']:
-            if d_final == k['PersonSurName_SurName']:
-                id_fast = k
-            else:
-                pass
-    return id_fast
+    logging.info('Врач не найден')
+    return None

@@ -1,35 +1,53 @@
-import logging
 import datetime
-from config.config import bot_token, login_ecp, password_ecp
+import logging
 import requests
 import authorization
 
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
-def search_date(MedStaffFact_id):
-    logging.info(f' search_date - MedStaffFact_id: {MedStaffFact_id}')
-    print(f' search_date - MedStaffFact_id: {MedStaffFact_id}')
-    ##авторизация
-    authorization.authorization()
+
+def get_date_range():
+    now = datetime.datetime.now()
+    tomorrow = now + datetime.timedelta(days=1)
+    end_date = now + datetime.timedelta(days=14)
+
+    tomorrow_str = tomorrow.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+
+    logging.info(f'Дата начала поиска: {tomorrow_str}, Дата окончания поиска: {end_date_str}')
+    return tomorrow_str, end_date_str
+
+
+def fetch_available_dates(med_staff_fact_id, session):
+    tomorrow_str, end_date_str = get_date_range()
+
+    url = (f'https://ecp.mznn.ru/api/TimeTableGraf/TimeTableGrafFreeDate?'
+           f'MedStaffFact_id={med_staff_fact_id}&'
+           f'TimeTableGraf_beg={tomorrow_str}&'
+           f'TimeTableGraf_end={end_date_str}&'
+           f'sess_id={session}')
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        logging.info(f'Данные о доступных датах: {data}')
+        return data
+    except requests.exceptions.RequestException as e:
+        logging.error(f'Ошибка при получении данных о доступных датах: {e}')
+        raise
+
+
+def search_date(med_staff_fact_id):
+    logging.info(f'Поиск доступных дат для MedStaffFact_id: {med_staff_fact_id}')
+
+    # Авторизация
     session = authorization.authorization()
 
-
-    now = datetime.datetime.now()
-
-    tomorrow = now + datetime.timedelta(days=1)
-
-    today = now.strftime("%Y-%m-%d")
-    tomorrow = tomorrow.strftime("%Y-%m-%d")
-    logging.info(f' tomorrow: {tomorrow}')
-
-    result = now + datetime.timedelta(days=14)
-    TimeTableGraf_end = result.date()
-
-
-    search_date = (f' https://ecp.mznn.ru/api/TimeTableGraf/TimeTableGrafFreeDate?MedStaffFact_id={MedStaffFact_id}'
-                   f'&TimeTableGraf_beg={tomorrow}&TimeTableGraf_end={TimeTableGraf_end}&sess_id={session}')
-
-    result_date = requests.get(search_date)
-    data_date = result_date.json()
-    print(f' data_date::: {data_date}')
-
-    return data_date
+    # Получение доступных дат
+    try:
+        data_date = fetch_available_dates(med_staff_fact_id, session)
+        return data_date
+    except Exception as e:
+        logging.error(f'Ошибка в функции search_date: {e}')
+        raise

@@ -1,46 +1,58 @@
 import logging
-from config.config import bot_token, login_ecp, password_ecp
 import requests
 import authorization
 
+# Константы
+BASE_URL = 'http://ecp.mznn.ru/api/TimeTableGraf'
+ALLOWED_TIMETABLE_TYPES = {'1', '4', '10', '11'}
 
-def search_time(MedStaffFact_id, data_date_dict):
-    print(f' получено значение в search_time1: {MedStaffFact_id}')
-    print(f' получено значение в search_time2: {data_date_dict}')
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
-    TimeTableGraf_begTime_list = []
-    for key in data_date_dict['data']:
-        TimeTableGraf_begTime_list.append(key['TimeTableGraf_begTime'])
-    print(TimeTableGraf_begTime_list)
 
-    ##авторизация
-    authorization.authorization()
+def fetch_available_times(med_staff_fact_id, beg_time, session):
+    url = f'{BASE_URL}/TimeTableGrafFreeTime?MedStaffFact_id={med_staff_fact_id}&TimeTableGraf_begTime={beg_time}&sess_id={session}'
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(f'Ошибка при получении доступного времени: {e}')
+        raise
+
+
+def fetch_timetable_details(time_table_graf_id, session):
+    url = f'{BASE_URL}/TimeTableGrafById?TimeTableGraf_id={time_table_graf_id}&sess_id={session}'
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(f'Ошибка при получении деталей расписания: {e}')
+        raise
+
+
+def filter_allowed_timetable_types(data):
+    return [item for item in data if item.get('TimeTableType_id') in ALLOWED_TIMETABLE_TYPES]
+
+
+def search_time(med_staff_fact_id, data_date_dict):
+    logging.info(f'Поиск доступного времени для MedStaffFact_id: {med_staff_fact_id}')
+
+    # Авторизация
     session = authorization.authorization()
 
+    # Извлечение времени начала
+    beg_time_list = [key['TimeTableGraf_begTime'] for key in data_date_dict.get('data', [])]
+    logging.info(f'Список времени начала: {beg_time_list}')
+
+    # Поиск доступного времени
     data_time_list = []
-    for item in TimeTableGraf_begTime_list:
+    for beg_time in beg_time_list:
+        time_data = fetch_available_times(med_staff_fact_id, beg_time, session)
+        for item in time_data.get('data', []):
+            timetable_details = fetch_timetable_details(item['TimeTableGraf_id'], session)
+            filtered_data = filter_allowed_timetable_types(timetable_details.get('data', []))
+            data_time_list.extend(filtered_data)
 
-        search_time = f'http://ecp.mznn.ru/api/TimeTableGraf/TimeTableGrafFreeTime?MedStaffFact_id={MedStaffFact_id}' \
-                      f'&TimeTableGraf_begTime={item}&sess_id={session}'
-
-        result_MedStaffFact_id = requests.get(search_time)
-        data_time_dict = result_MedStaffFact_id.json()
-        # print(data_time_dict)
-        logging.info(f' data_time_dict: {data_time_dict}')
-        for item in data_time_dict['data']:
-            TimeTableGraf_id = item['TimeTableGraf_id']
-            # logging.info(f' TimeTableGraf_id: {TimeTableGraf_id}')
-            search_type = f'http://ecp.mznn.ru/api/TimeTableGraf/TimeTableGrafById?' \
-                          f'TimeTableGraf_id={TimeTableGraf_id}&sess_id={session}'
-            result_type = requests.get(search_type)
-            data_type_dict = result_type.json()
-            r = data_type_dict
-            # print(f' r = {r}')
-            for j in r['data']:
-                if j['TimeTableType_id'] == '1' or j['TimeTableType_id'] == '4' or j['TimeTableType_id'] == '10' or j[
-                    'TimeTableType_id'] == '11':
-                    data_time_list.append(j)
-                else:
-                    pass
-    logging.info(f' data_time_list: {data_time_list}')
+    logging.info(f'Найдено доступных времен: {len(data_time_list)}')
     return data_time_list

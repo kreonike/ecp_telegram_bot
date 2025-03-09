@@ -1,33 +1,45 @@
 import logging
-from config.config import bot_token, login_ecp, password_ecp
 import requests
 import authorization
 
+# Константы
+BASE_URL = 'http://ecp.mznn.ru/api/TimeTableGraf'
 
-def search_time2(MedStaffFact_id, TimeTableGraf_begTime):
-    print(f' получено значение в search_time1: {MedStaffFact_id}')
-    print(f' получено значение в search_time2: {TimeTableGraf_begTime}')
-    TimeTableGraf_begTime = TimeTableGraf_begTime.partition(' ')[0]
-    print(f' правильный: {TimeTableGraf_begTime}')
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
-    ##авторизация
-    authorization.authorization()
+
+def fetch_available_times(med_staff_fact_id, beg_time, session):
+    url = f'{BASE_URL}/TimeTableGrafFreeTime?MedStaffFact_id={med_staff_fact_id}&TimeTableGraf_begTime={beg_time}&sess_id={session}'
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(f'Ошибка при получении доступного времени: {e}')
+        raise
+
+
+def process_time_data(data):
+    return {item['TimeTableGraf_begTime']: item['TimeTableGraf_id'] for item in data.get('data', [])}
+
+
+def search_time2(med_staff_fact_id, time_table_graf_beg_time):
+    logging.info(
+        f'Поиск доступного времени для MedStaffFact_id: {med_staff_fact_id}, TimeTableGraf_begTime: {time_table_graf_beg_time}')
+
+    # Очистка времени от лишних данных
+    time_table_graf_beg_time = time_table_graf_beg_time.partition(' ')[0]
+    logging.info(f'Очищенное время: {time_table_graf_beg_time}')
+
+    # Авторизация
     session = authorization.authorization()
 
-    # TODO тип бирки
+    # Получение данных о доступном времени
+    time_data = fetch_available_times(med_staff_fact_id, time_table_graf_beg_time, session)
+    logging.info(f'Данные о доступном времени: {time_data}')
 
-    search_time = f'http://ecp.mznn.ru/api/TimeTableGraf/TimeTableGrafFreeTime?MedStaffFact_id={MedStaffFact_id}' \
-                  f'&TimeTableGraf_begTime={TimeTableGraf_begTime}&sess_id={session}'
+    # Обработка данных
+    data_time_dict = process_time_data(time_data)
+    logging.info(f'Финальный словарь: {data_time_dict}')
 
-    result_MedStaffFact_id = requests.get(search_time)
-    data_MedStaffFact_id = result_MedStaffFact_id.json()
-    print(f' дата для search_time: {data_MedStaffFact_id}')
-
-    data_time_dict = {}
-
-    for k in data_MedStaffFact_id['data']:
-        TimeTableGraf_begTime = k['TimeTableGraf_begTime']
-        data_time_dict[TimeTableGraf_begTime] = k['TimeTableGraf_id']
-
-    print(f' тут финальный словарь из search_time: {data_time_dict}')
     return data_time_dict

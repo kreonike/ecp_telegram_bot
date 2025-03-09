@@ -1,59 +1,47 @@
-import authorization
+import logging
 import requests
+import authorization
 
-lpu_id = 'Lpu_id=2762'
+# Константы
+LPU_ID = '2762'
+BASE_URL = 'http://ecp.mznn.ru/api/MedStaffFact/MedStaffFactByMO'
+STOMAT_SPECIALTIES = ['520101000000160', '520101000000197', '520101000000165']
+
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
+
+def fetch_doctors_by_specialty(specialty_id, pol, session):
+    url = f'{BASE_URL}?MedSpecOms_id={specialty_id}&Lpu_id={LPU_ID}&LpuBuilding_id={pol}&sess_id={session}'
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(f'Ошибка при получении данных о врачах: {e}')
+        raise
+
+
+def combine_doctors_data(specialties, pol, session):
+    combined_data = []
+    for specialty_id in specialties:
+        data = fetch_doctors_by_specialty(specialty_id, pol, session)
+        combined_data.extend(data.get('data', []))
+    return combined_data
 
 
 def search_spec_doctor(base_ecp_spec, pol):
-    print(base_ecp_spec)
-    ##авторизация
-    authorization.authorization()
+    logging.info(f'Поиск врачей по специальности: {base_ecp_spec}, корпус: {pol}')
+
+    # Авторизация
     session = authorization.authorization()
 
+    # Обработка специальностей
     if base_ecp_spec == 520101000000160:
-        print('меняем специальности')
-        stomat = ['520101000000160', '520101000000197', '520101000000165']
-
-        combile_data_lpu_person_old = []
-        data_lpu_person_list = []
-        for i in stomat:
-            search_lpu_person = f'http://ecp.mznn.ru/api/MedStaffFact/MedStaffFactByMO?MedSpecOms_id={i}&' \
-                                f'{lpu_id}&LpuBuilding_id={pol}&sess_id={session}'
-            print(f'  (((((((((( search_lpu_person: {search_lpu_person}')
-
-            result_lpu_person = requests.get(search_lpu_person)
-            # data_lpu_person_old.append(result_lpu_person.json())
-            data_lpu_person_old_ = result_lpu_person.json()
-            # print(data_lpu_person_old_)
-            combile_data_lpu_person_old.append(data_lpu_person_old_)
-        print(f' ? combile_data_lpu_person_old: {combile_data_lpu_person_old}')
-        for member in combile_data_lpu_person_old:
-            for n in member['data']:
-                data_lpu_person_list.append(n)
-
-        data_lpu_person_old = data_lpu_person_list
-        print(f' выход из функции data_lpu_person_old: {data_lpu_person_old}')
-        return data_lpu_person_old
-
+        logging.info('Обработка стоматологических специальностей')
+        doctors_data = combine_doctors_data(STOMAT_SPECIALTIES, pol, session)
     else:
+        logging.info(f'Обработка специальности: {base_ecp_spec}')
+        doctors_data = fetch_doctors_by_specialty(base_ecp_spec, pol, session).get('data', [])
 
-        search_lpu_person = f'http://ecp.mznn.ru/api/MedStaffFact/MedStaffFactByMO?MedSpecOms_id={base_ecp_spec}&' \
-                            f'{lpu_id}&LpuBuilding_id={pol}&sess_id={session}'
-
-        result_lpu_person = requests.get(search_lpu_person)
-        data_lpu_person_old_ = result_lpu_person.json()
-        data_lpu_person_old = data_lpu_person_old_['data']
-
-        # data_lpu_person_rectype = [
-        #     {
-        #         'Person_id': item['Person_id'],
-        #         'PersonSurName_SurName': item['PersonSurName_SurName'],
-        #         'PersonFirName_FirName': item['PersonFirName_FirName'],
-        #         'PersonSecName_SecName': item['PersonSecName_SecName']
-        #     }
-        #     for item in data_lpu_person_old if item.get('RecType_id') == '1'
-        # ]
-        # print(data_lpu_person_rectype)
-
-        print(f' MedStaffFact_id data_lpu_person_old: {data_lpu_person_old}')
-        return data_lpu_person_old
+    logging.info(f'Найдено врачей: {len(doctors_data)}')
+    return doctors_data

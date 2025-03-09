@@ -2,6 +2,7 @@ import logging
 from config.config import bot_token, login_ecp, password_ecp
 import requests
 import authorization
+from config.config import API_ECP
 
 
 def search_person(person_id):
@@ -10,7 +11,7 @@ def search_person(person_id):
     authorization.authorization()
     session = authorization.authorization()
 
-    search_person = f'https://ecp.mznn.ru/api/Person?Person_id={person_id}&sess_id={session}'
+    search_person = f'{API_ECP}Person?Person_id={person_id}&sess_id={session}'
     result_person = requests.get(search_person)
     person_data = result_person.json()
     print(f' дата в person_id: {person_data}')

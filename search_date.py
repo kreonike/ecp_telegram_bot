@@ -2,6 +2,7 @@ import datetime
 import logging
 import requests
 import authorization
+from config.config import API_ECP
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
@@ -21,7 +22,7 @@ def get_date_range():
 def fetch_available_dates(med_staff_fact_id, session):
     tomorrow_str, end_date_str = get_date_range()
 
-    url = (f'https://ecp.mznn.ru/api/TimeTableGraf/TimeTableGrafFreeDate?'
+    url = (f'{API_ECP}TimeTableGraf/TimeTableGrafFreeDate?'
            f'MedStaffFact_id={med_staff_fact_id}&'
            f'TimeTableGraf_beg={tomorrow_str}&'
            f'TimeTableGraf_end={end_date_str}&'

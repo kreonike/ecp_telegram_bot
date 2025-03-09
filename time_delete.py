@@ -2,6 +2,7 @@ import logging
 from config.config import bot_token, login_ecp, password_ecp
 import requests
 import authorization
+from config.config import API_ECP
 
 
 def time_delete(TimeTable_id, TimeTableSource):
@@ -12,7 +13,7 @@ def time_delete(TimeTable_id, TimeTableSource):
     # logging.info(f' TimeTableSource {TimeTableSource}')
     FailCause = 1
     ##удаляем бирку
-    delete_time = f'https://ecp.mznn.ru/api/TimeTable?TimeTable_id={TimeTable_id}&TimeTableSource={TimeTableSource}' \
+    delete_time = f'{API_ECP}TimeTable?TimeTable_id={TimeTable_id}&TimeTableSource={TimeTableSource}' \
                   f'&FailCause={FailCause}&sess_id={session}'
     result_detele = requests.delete(delete_time)
     status_delete = result_detele.json()

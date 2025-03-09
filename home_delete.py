@@ -3,6 +3,7 @@ from config.config import bot_token, login_ecp, password_ecp
 import requests
 import authorization
 import datetime
+from config.config import API_ECP
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
@@ -14,7 +15,7 @@ def home_delete(homevisit_id):
     session = authorization.authorization()
 
     try:
-        get_status_address = f'https://ecp.mznn.ru/api/HomeVisit/HomeVisitCancel?HomeVisit_id=' \
+        get_status_address = f'{API_ECP}HomeVisit/HomeVisitCancel?HomeVisit_id=' \
                              f'{homevisit_id}&sess_id={session}'
 
         result_address = requests.put(get_status_address)

@@ -2,6 +2,7 @@ import logging
 from config.config import bot_token, login_ecp, password_ecp
 import requests
 import authorization
+from config.config import API_ECP
 
 
 def search_polis(polis):
@@ -10,7 +11,7 @@ def search_polis(polis):
     authorization.authorization()
     session = authorization.authorization()
 
-    search_polis = f'https://ecp.mznn.ru/api/Polis?Polis_Num={polis}&sess_id={session}'
+    search_polis = f'{API_ECP}Polis?Polis_Num={polis}&sess_id={session}'
     result_polis = requests.get(search_polis)
     polis_data = result_polis.json()
     print(f' дата для search_time: {polis_data}')

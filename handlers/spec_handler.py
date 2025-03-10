@@ -135,4 +135,6 @@ async def get_spec(message: types.Message, state: FSMContext):
 
                 from utils.json_temp_data import save_global_spec_dict_final, save_postid
                 save_global_spec_dict_final(spec_dict_final)
+                print(f'записываем save_global_spec_dict_final', spec_dict_final)
                 save_postid(post_id)
+

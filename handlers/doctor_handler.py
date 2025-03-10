@@ -17,11 +17,15 @@ from states.states import ClientRequests
 
 logger = logging.getLogger(__name__)
 
-from utils.json_temp_data import load_global_spec_dict_final
-print(f'doctor enter value', load_global_spec_dict_final())
-spec_dict_final = load_global_spec_dict_final()
+# from utils.json_temp_data import load_global_spec_dict_final
+# print(f'doctor enter value', load_global_spec_dict_final())
+# spec_dict_final = load_global_spec_dict_final()
 
 async def get_doctor(message: types.Message, state: FSMContext):
+    from utils.json_temp_data import load_global_spec_dict_final
+    print(f'doctor enter value', load_global_spec_dict_final())
+    spec_dict_final = load_global_spec_dict_final()
+
     #global spec_dict_final
     print('test test test')
     print(f't2: {spec_dict_final}')
@@ -42,8 +46,12 @@ async def get_doctor(message: types.Message, state: FSMContext):
         #print(f' ?', MedStaffFact_id)
         #global MedStaffFact_id
 
+        print(f' spec_dict_final в doctor_handler', spec_dict_final)
+        print(f' mess в doctor_handler', mess)
+
 
         MedStaffFact_id = (spec_dict_final[mess])
+        print(f' MedStaffFact_id в doctor_handler', MedStaffFact_id)
 
         from utils.json_temp_data import save_global_medstafffact_id
         save_global_medstafffact_id(MedStaffFact_id)

@@ -3,4 +3,4 @@ login_ecp = 'bl12_respond'
 password_ecp = 'xM5nQo'
 
 #константы
-API_ECP = 'http://ecp.mznn.ru/api/'
+API_ECP = 'https://ecp.mznn.ru/api/'

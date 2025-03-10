@@ -7,7 +7,7 @@ if not os.path.exists('utils'):
 def save_global_spec_dict_final(value):
     file_path = os.path.join('utils', 'global_spec_dict_final.json')
     with open(file_path, 'w', encoding="utf-8") as f:
-        json.dump({'c': value}, f, ensure_ascii=False, indent=4)
+        json.dump({'global_spec_dict_final': value}, f, ensure_ascii=False, indent=4)
 
 def load_global_spec_dict_final():
     file_path = os.path.join('utils', 'global_spec_dict_final.json')

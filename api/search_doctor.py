@@ -1,7 +1,7 @@
 import logging
 import requests
 from api import authorization
-import base_ecp
+from handlers import base_ecp
 
 # Константы
 LPU_ID = '2762'

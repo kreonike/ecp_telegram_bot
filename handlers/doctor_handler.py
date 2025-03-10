@@ -38,9 +38,16 @@ async def get_doctor(message: types.Message, state: FSMContext):
     else:
         await message.answer(
                                'Идёт поиск сводных дат для записи, это может занять много времени, пожалуйста ожидайте..')
-        global MedStaffFact_id
+
+        #print(f' ?', MedStaffFact_id)
+        #global MedStaffFact_id
+
 
         MedStaffFact_id = (spec_dict_final[mess])
+
+        from utils.json_temp_data import save_global_medstafffact_id
+        save_global_medstafffact_id(MedStaffFact_id)
+
         await state.update_data(MedStaffFact_id=MedStaffFact_id)  ################
 
         print(f' @@ MedStaffFact_id: {MedStaffFact_id}')

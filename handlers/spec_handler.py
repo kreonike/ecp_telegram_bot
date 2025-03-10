@@ -41,7 +41,7 @@ async def get_spec(message: types.Message, state: FSMContext):
         print(f'Специальность: {spec}')
         print(f'Пол: {pol}')
 
-        # Создаем словарь для проверки специальностей
+        # словарь для проверки специальностей
         base_ecp_medspecoms_id = {
             'хирург': base_ecp.MEDSPEC_SURGEON,
             'стоматолог': base_ecp.MEDSPEC_DENTIST,

@@ -2,7 +2,7 @@ import logging
 import requests
 from api import authorization
 from config.config import API_ECP
-from tqdm import tqdm
+from tqdm import tqdm  # Импортируем tqdm для отображения прогресса
 
 # Константы
 ALLOWED_TIMETABLE_TYPES = {'1', '4', '10', '11'}

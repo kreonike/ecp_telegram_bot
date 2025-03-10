@@ -1,11 +1,9 @@
 import logging
-
 import requests
-from tqdm import tqdm
-
 from api import authorization
-from config.config import API_ECP
 from handlers import base_ecp
+from tqdm import tqdm
+from config.config import API_ECP
 
 # Константы
 LPU_ID = '2762'

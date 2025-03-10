@@ -8,14 +8,10 @@ from utils.json_utils import save_user_to_json
 
 logger = logging.getLogger(__name__)
 
-# Версия и создатель
-version = '4.0.2 '
-creator = '@rapot'
-bot_birthday = '13.10.2022 15:14'
-
 
 async def start_command(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
+    from main import version, creator, bot_birthday
     logger.info(f"Текущее состояние пользователя: {current_state}")
     if current_state:
         await message.answer(f"Восстановлено состояние: {current_state}")

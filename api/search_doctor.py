@@ -2,16 +2,16 @@ import logging
 import requests
 from api import authorization
 from handlers import base_ecp
+from config.config import API_ECP
 
 # Константы
 LPU_ID = '2762'
-BASE_URL = 'http://ecp.mznn.ru/api/MedStaffFact/MedStaffFactByMO'
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 
 def fetch_doctors_by_specialty(specialty_id, session):
-    url = f'{BASE_URL}?MedSpecOms_id={specialty_id}&Lpu_id={LPU_ID}&sess_id={session}'
+    url = f'{API_ECP}MedStaffFact/MedStaffFactByMO?MedSpecOms_id={specialty_id}&Lpu_id={LPU_ID}&sess_id={session}'
     try:
         response = requests.get(url)
         response.raise_for_status()

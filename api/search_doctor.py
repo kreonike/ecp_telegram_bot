@@ -1,8 +1,11 @@
 import logging
+
 import requests
+from tqdm import tqdm
+
 from api import authorization
-from handlers import base_ecp
 from config.config import API_ECP
+from handlers import base_ecp
 
 # Константы
 LPU_ID = '2762'
@@ -38,7 +41,8 @@ def search_doctor(surname):
     specialty_ids = base_ecp.medspecoms_id.values()
 
     # Поиск врача по фамилии
-    for specialty_id in specialty_ids:
+    total_specialties = len(specialty_ids)
+    for specialty_id in tqdm(specialty_ids, desc="Поиск врача", unit="специальность"):  # Добавляем прогресс бар
         doctors_data = fetch_doctors_by_specialty(specialty_id, session)
         doctor = find_doctor_by_surname(doctors_data, surname)
         if doctor:

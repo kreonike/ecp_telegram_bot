@@ -2,6 +2,7 @@ import logging
 import requests
 from api import authorization
 from config.config import API_ECP
+from tqdm import tqdm
 
 # Константы
 ALLOWED_TIMETABLE_TYPES = {'1', '4', '10', '11'}
@@ -47,7 +48,8 @@ def search_time(med_staff_fact_id, data_date_dict):
 
     # Поиск доступного времени
     data_time_list = []
-    for beg_time in beg_time_list:
+    total_tasks = len(beg_time_list)
+    for beg_time in tqdm(beg_time_list, desc="Поиск доступного времени", unit="запрос"):  # Добавляем прогресс бар
         time_data = fetch_available_times(med_staff_fact_id, beg_time, session)
         for item in time_data.get('data', []):
             timetable_details = fetch_timetable_details(item['TimeTableGraf_id'], session)

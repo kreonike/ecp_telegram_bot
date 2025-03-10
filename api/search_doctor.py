@@ -1,6 +1,6 @@
 import logging
 import requests
-import authorization
+from api import authorization
 import base_ecp
 
 # Константы

@@ -1,7 +1,7 @@
 import datetime
 import logging
 import requests
-import authorization
+from api import authorization
 from config.config import API_ECP
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)

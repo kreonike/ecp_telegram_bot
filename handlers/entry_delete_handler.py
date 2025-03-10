@@ -3,7 +3,7 @@ import logging
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
-import time_delete
+from api import time_delete
 # from main import spec_check
 from handlers.return_to_main_menu_handler import return_to_main_menu
 from keyboards.client_kb import kb_client, menu_client

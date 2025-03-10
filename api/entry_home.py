@@ -1,7 +1,7 @@
 import datetime
 import logging
 import requests
-import authorization
+from api import authorization
 from config.config import API_ECP
 
 # константы

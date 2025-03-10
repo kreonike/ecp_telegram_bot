@@ -2,12 +2,12 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
-import base_ecp
-from base_ecp import medspecoms_id
+from handlers import base_ecp
+from handlers.base_ecp import medspecoms_id
 
 print(medspecoms_id)
 
-import search_spec_doctor
+from api import search_spec_doctor
 from keyboards.client_kb import kb_client
 # from main import spec_check
 from states.states import ClientRequests

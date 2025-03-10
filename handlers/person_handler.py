@@ -3,9 +3,7 @@ import logging
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
-import entry_status
-import search_person
-import search_polis
+from api import entry_status, search_person, search_polis
 from keyboards.client_kb import menu_client, ident_client, kb_client
 from states.states import ClientRequests
 

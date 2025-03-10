@@ -1,6 +1,6 @@
 import logging
 import requests
-import authorization
+from api import authorization
 
 # Константы
 BASE_URL = 'http://ecp.mznn.ru/api/TimeTableGraf'

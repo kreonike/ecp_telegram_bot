@@ -1,13 +1,9 @@
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
-import entry_home
-import entry_status
-import search_person
-import search_polis
-from keyboards.client_kb import menu_client, kb_client, ident_client
+from api import entry_home
+from keyboards.client_kb import kb_client
 from states.states import ClientRequests
-import search_time2
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,7 +12,7 @@ logger = logging.getLogger(__name__)
 async def get_person_question(message: types.Message, state: FSMContext):
     message_entry = message.text
 
-    from utils.json_temp_data import save_global_person_id, load_global_person_id, load_phone_mess, load_address_mess, load_reason_mess
+    from utils.json_temp_data import load_global_person_id, load_phone_mess, load_address_mess, load_reason_mess
     person_id = load_global_person_id()
     address_mess = load_address_mess()
     phone_mess = load_phone_mess()

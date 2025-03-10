@@ -3,7 +3,7 @@ import logging
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
-import home_status
+from api import home_status
 from handlers.return_to_main_menu_handler import return_to_main_menu
 
 logger = logging.getLogger(__name__)

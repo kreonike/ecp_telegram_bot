@@ -3,7 +3,7 @@ import logging
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
-import search_time2
+from api import search_time2
 from keyboards.client_kb import menu_client, kb_client
 from states.states import ClientRequests
 

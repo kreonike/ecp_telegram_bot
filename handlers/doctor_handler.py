@@ -5,8 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
-import search_date
-import search_time
+from api import search_date, search_time
 from handlers.return_to_main_menu_handler import return_to_main_menu
 # from handlers.spec_handler import get_spec
 from keyboards.client_kb import kb_client

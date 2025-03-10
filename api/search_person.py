@@ -1,7 +1,5 @@
-import logging
-from config.config import bot_token, login_ecp, password_ecp
 import requests
-import authorization
+from api import authorization
 from config.config import API_ECP
 
 

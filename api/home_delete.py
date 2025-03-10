@@ -1,8 +1,6 @@
 import logging
-from config.config import bot_token, login_ecp, password_ecp
 import requests
-import authorization
-import datetime
+from api import authorization
 from config.config import API_ECP
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)

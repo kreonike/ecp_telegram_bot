@@ -105,7 +105,7 @@ endDate	null
 
     Отмена записи:
 
-        & ect        
+        & etc        
 
 
 

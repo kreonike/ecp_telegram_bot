@@ -28,6 +28,8 @@ https://ecp.mznn.ru/api/Person?Person_id={person_id}
 пример вывода:
 curl https://ecp.mznn.ru/api/Refbook?Refbook_Code=dbo.HomeVisitStatus
 
+доступна база комант от пользователей: database
+
 	
 error_code	0
 data	
@@ -117,5 +119,9 @@ endDate	null
 Информация о поликлиниках: Пользователь может получить информацию о адресах и телефонах поликлиник, а также о режиме их работы.
 
 ### Установа
+python or python3
 
-
+screen
+python -m venv ecp
+pip install -r requirements.txt
+python main.py

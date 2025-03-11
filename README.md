@@ -17,20 +17,22 @@
 'ОТМЕНА ЗАПИСИ К ВРАЧУ' - отмена записи к врачу
 
 api основные запросы:
-https://ecp.mznn.ru/api/Polis?Polis_Num={polis}
-https://ecp.mznn.ru/api/Address?Person_id={person_id}
-https://ecp.mznn.ru/api/TimeTableListbyPatient?Person_id={person_id}
-https://ecp.mznn.ru/api/TimeTableGraf/TimeTableGrafWrite?Person_id={person_id}&TimeTableGraf_id={TimeTableGraf_id}
-https://ecp.mznn.ru/api/TimeTableListbyPatient?Person_id={person_id}
-https://ecp.mznn.ru/api/Person?Person_id={person_id}
+- https://ecp.mznn.ru/api/Polis?Polis_Num={polis}
+- https://ecp.mznn.ru/api/Address?Person_id={person_id}
+- https://ecp.mznn.ru/api/TimeTableListbyPatient?Person_id={person_id}
+- https://ecp.mznn.ru/api/TimeTableGraf/TimeTableGrafWrite?Person_id={person_id}&TimeTableGraf_id={TimeTableGraf_id}
+- https://ecp.mznn.ru/api/TimeTableListbyPatient?Person_id={person_id}
+- https://ecp.mznn.ru/api/Person?Person_id={person_id}
 
 
 пример вывода:
-curl https://ecp.mznn.ru/api/Refbook?Refbook_Code=dbo.HomeVisitStatus
+
+`curl https://ecp.mznn.ru/api/Refbook?Refbook_Code=dbo.HomeVisitStatus`
 
 доступна база комант от пользователей: bot_database.db
 
 	
+```
 error_code	0
 data	
 0	
@@ -81,6 +83,8 @@ Code	"6"
 KLRgn_id	null
 begDate	null
 endDate	null
+```
+
 
 
 
@@ -121,7 +125,8 @@ endDate	null
 ### Установа
 python or python3
 
-`screen`
-`python -m venv ecp`
-`pip install -r requirements.txt`
-`python main.py`
+- `screen`
+- `python -m venv ecp`
+- `pip install -r requirements.txt`
+- `python main.py`
+

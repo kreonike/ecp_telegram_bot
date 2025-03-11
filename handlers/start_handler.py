@@ -25,15 +25,3 @@ async def start_command(message: types.Message, state: FSMContext):
             f'\n'
             f' версия бота: {version}\n'
             f' дата создания: {bot_birthday}\n', reply_markup=kb_client)
-
-        # Собираем данные о пользователе
-        user_data = {
-            "user_id": message.from_user.id,
-            "username": message.from_user.username,
-            "first_name": message.from_user.first_name,
-            "last_name": message.from_user.last_name,
-            "date": message.date.isoformat()
-        }
-
-        # Сохраняем данные в JSON
-        save_user_to_json(user_data)

@@ -1,10 +1,11 @@
 import logging
-
-from aiogram import Bot, Dispatcher
+import datetime
+from aiogram import Bot, Dispatcher, types
 from aiogram import F
 from aiogram.client import telegram
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 
 from config.config import bot_token
 from handlers import (info_handler, worker_handler, start_handler, person_handler,
@@ -29,7 +30,10 @@ from handlers.menu_doctor_check_entry_handler import check_doctor_command
 from handlers.menu_entry_handler import spec_command
 from handlers.spec_handler import get_spec
 from handlers.time_handler import get_person_time
+from keyboards.client_kb import pol_client
 from states.states import ClientRequests
+from peewee import SqliteDatabase, Model, IntegerField, TextField, DateTimeField
+from aiogram.dispatcher.middlewares.base import BaseMiddleware
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -54,6 +58,50 @@ dp = Dispatcher()
 version = '7.0.2 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
+
+# Настройка базы данных
+db = SqliteDatabase('bot_database.db')
+
+
+class UserMessage(Model):
+    user_id = IntegerField()
+    username = TextField(null=True)
+    first_name = TextField(null=True)
+    message_text = TextField(null=True)
+    message_type = TextField(default="text")
+    timestamp = DateTimeField(default=datetime.datetime.now)
+
+    class Meta:
+        database = db
+
+
+def init_db():
+    db.connect()
+    db.create_tables([UserMessage], safe=True)
+    logger.info("База данных инициализирована")
+
+
+# Middleware
+class MessageLoggingMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event: types.Message, data):
+        logger.debug(f"Получено сообщение: {event.message_id} от {event.from_user.id}")
+
+        try:
+            UserMessage.create(
+                user_id=event.from_user.id,
+                username=event.from_user.username,
+                first_name=event.from_user.first_name,
+                message_text=event.text
+            )
+            logger.info(f"Сохранено сообщение: текст={event.text}, user_id={event.from_user.id}")
+
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении сообщения {event.message_id}: {str(e)}", exc_info=True)
+
+        return await handler(event, data)
+
+# Регистрация middleware
+dp.message.middleware(MessageLoggingMiddleware())
 
 
 # Подключение обработчиков
@@ -95,10 +143,14 @@ dp.message.register(person_handler.get_person_polis, ClientRequests.checking)
 dp.message.register(menu_check_entry_command, F.text == 'ПРОВЕРКА ЗАПИСИ')
 dp.message.register(return_to_main_menu_handler.return_to_main_menu, F.text == 'вернуться в меню')
 
-
+# Обработчик по умолчанию для всех сообщений
+@dp.message()
+async def default_handler(message: types.Message):
+    logger.debug(f"Сообщение попало в обработчик по умолчанию: {message.text}")
 
 
 async def main():
+    init_db()
     await dp.start_polling(bot, skip_updates=True)
 
 if __name__ == '__main__':
@@ -137,4 +189,3 @@ if __name__ == '__main__':
 #     await state.clear()
 #     await message.answer('Выберите раздел:', reply_markup=kb_client)
 #     logger.info("Пользователь возвращён в главное меню")
-

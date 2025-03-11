@@ -28,7 +28,7 @@ https://ecp.mznn.ru/api/Person?Person_id={person_id}
 пример вывода:
 curl https://ecp.mznn.ru/api/Refbook?Refbook_Code=dbo.HomeVisitStatus
 
-доступна база комант от пользователей: database
+доступна база комант от пользователей: bot_database.db
 
 	
 error_code	0

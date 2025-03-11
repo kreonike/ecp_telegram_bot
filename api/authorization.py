@@ -1,13 +1,13 @@
 import logging
-from config.config import bot_token, login_ecp, password_ecp
+from config.config import BOT_TOKEN, LOGIN_ECP, PASSWORD_ECP
 import requests
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 
 def authorization():
-    login = login_ecp
-    password = password_ecp
+    login = LOGIN_ECP
+    password = PASSWORD_ECP
     link = 'https://ecp.mznn.ru/api/user/login' + '?Login=' + login + '&Password=' + password
 
     responce = requests.get(link)

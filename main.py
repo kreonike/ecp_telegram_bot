@@ -7,7 +7,7 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from config.config import bot_token
+from config.config import BOT_TOKEN
 from handlers import (info_handler, worker_handler, start_handler, person_handler,
                       return_to_main_menu_handler, po1_handler,
                       po2_handler, po3_handler, po4_handler, cancel_handler, call_checking_home_handler)
@@ -48,7 +48,7 @@ session = AiohttpSession(
 #redis_storage = RedisStorage.from_url('redis://95.79.40.128:6379/0')  # Укажите ваш Redis URL
 
 # Инициализация бота и диспетчера
-bot = Bot(token=bot_token, session=session)
+bot = Bot(token=BOT_TOKEN, session=session)
 #dp = Dispatcher(storage=redis_storage)  # Используем RedisStorage
 dp = Dispatcher()
 

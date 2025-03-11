@@ -1,6 +1,14 @@
-bot_token = '7516097499:AAG-CB1QDrTXLtbSa8_oWOGu_drbB_106Vc'
-login_ecp = 'bl12_respond'
-password_ecp = 'xM5nQo'
+import os
 
-#константы
+from dotenv import load_dotenv, find_dotenv
+
+if not find_dotenv():
+    exit("Переменные окружения не загружены т.к отсутствует файл .env")
+else:
+    load_dotenv()
+
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+LOGIN_ECP = os.getenv('LOGIN_ECP')
+PASSWORD_ECP = os.getenv('PASSWORD_ECP')
+
 API_ECP = 'https://ecp.mznn.ru/api/'

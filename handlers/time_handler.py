@@ -9,9 +9,7 @@ from states.states import ClientRequests
 
 logger = logging.getLogger(__name__)
 
-
 from utils.json_temp_data import save_data_time_final
-
 
 async def get_person_time(message: types.Message, state: FSMContext):
     message_time = message.text
@@ -26,13 +24,19 @@ async def get_person_time(message: types.Message, state: FSMContext):
 
     else:
         await message.answer('Проверка возможности записи, ожидайте')
-        #global data_time_final
         data = await state.get_data()
         MedStaffFact_id = data.get('MedStaffFact_id')
 
         print(f' message_time в else: {message_time}')
         data_time_final2 = search_time2.search_time2(MedStaffFact_id, message_time)
         print(f' data_time_final2: {data_time_final2}')
+
+        # Проверка, что введенное время есть в словаре data_time_final2
+        if message_time not in data_time_final2:
+            print(f'Ошибка: время "{message_time}" не найдено в доступных слотах.')
+            await message.answer('Ошибка: не верный ввод. Пожалуйста, выберите время из меню.')
+            return
+
         TimeTableGraf_id = data_time_final2[message_time]
 
         print(f' TimeTableGraf_id !!!!!!!!: {TimeTableGraf_id}')

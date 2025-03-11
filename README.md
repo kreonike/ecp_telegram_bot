@@ -121,7 +121,7 @@ endDate	null
 ### Установа
 python or python3
 
-screen
-python -m venv ecp
-pip install -r requirements.txt
-python main.py
+`screen`
+`python -m venv ecp`
+`pip install -r requirements.txt`
+`python main.py`

@@ -1,5 +1,7 @@
 import logging
 import datetime
+import os
+
 from aiogram import Bot, Dispatcher, types
 from aiogram import F
 from aiogram.client import telegram
@@ -60,7 +62,10 @@ creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
 
 # Настройка базы данных
-db = SqliteDatabase('bot_database.db')
+DATABASE_DIR = 'database'
+if not os.path.exists(DATABASE_DIR):
+    os.makedirs(DATABASE_DIR)
+db = SqliteDatabase(os.path.join(DATABASE_DIR, 'bot_database.db'))
 
 
 class UserMessage(Model):

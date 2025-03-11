@@ -1,15 +1,13 @@
 import logging
 import requests
 from api import authorization
-
-# Константы
-BASE_URL = 'http://ecp.mznn.ru/api/TimeTableGraf'
+from config.config import API_ECP
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 
 def fetch_available_times(med_staff_fact_id, beg_time, session):
-    url = f'{BASE_URL}/TimeTableGrafFreeTime?MedStaffFact_id={med_staff_fact_id}&TimeTableGraf_begTime={beg_time}&sess_id={session}'
+    url = f'{API_ECP}TimeTableGraf/TimeTableGrafFreeTime?MedStaffFact_id={med_staff_fact_id}&TimeTableGraf_begTime={beg_time}&sess_id={session}'
     try:
         response = requests.get(url)
         response.raise_for_status()

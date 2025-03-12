@@ -152,6 +152,7 @@ dp.message.register(return_to_main_menu_handler.return_to_main_menu, F.text == '
 @dp.message()
 async def default_handler(message: types.Message):
     logger.debug(f"Сообщение попало в обработчик по умолчанию: {message.text}")
+    await message.answer("Неверный ввод, выберите на интересующий Вас раздел меню")
 
 
 async def main():

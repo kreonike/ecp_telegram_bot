@@ -10,7 +10,7 @@ import asyncio
 ALLOWED_TIMETABLE_TYPES = {'1', '4', '10', '11'}
 ####
 ###
-#https://ecp.mznn.ru/api/Refbook?Refbook_Code=dbo.TimeTableType
+# https://ecp.mznn.ru/api/Refbook?Refbook_Code=dbo.TimeTableType
 # 1: "Обычная"
 # 2: "Резервная"
 # 3: "Платная"
@@ -35,8 +35,10 @@ ALLOWED_TIMETABLE_TYPES = {'1', '4', '10', '11'}
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
+
 async def fetch_available_times(med_staff_fact_id, beg_time, session):
-    url = f'{API_ECP}TimeTableGraf/TimeTableGrafFreeTime?MedStaffFact_id={med_staff_fact_id}&TimeTableGraf_begTime={beg_time}&sess_id={session}'
+    url = (f'{API_ECP}TimeTableGraf/TimeTableGrafFreeTime?MedStaffFact_id='
+           f'{med_staff_fact_id}&TimeTableGraf_begTime={beg_time}&sess_id={session}')
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -44,6 +46,7 @@ async def fetch_available_times(med_staff_fact_id, beg_time, session):
     except requests.exceptions.RequestException as e:
         logging.error(f'Ошибка при получении доступного времени: {e}')
         raise
+
 
 async def fetch_timetable_details(time_table_graf_id, session):
     url = f'{API_ECP}TimeTableGraf/TimeTableGrafById?TimeTableGraf_id={time_table_graf_id}&sess_id={session}'
@@ -55,8 +58,10 @@ async def fetch_timetable_details(time_table_graf_id, session):
         logging.error(f'Ошибка при получении деталей расписания: {e}')
         raise
 
+
 def filter_allowed_timetable_types(data):
     return [item for item in data if item.get('TimeTableType_id') in ALLOWED_TIMETABLE_TYPES]
+
 
 async def search_time(med_staff_fact_id, data_date_dict, bot: Bot, message):
     logging.info(f'Поиск доступного времени для MedStaffFact_id: {med_staff_fact_id}')
@@ -95,7 +100,8 @@ async def search_time(med_staff_fact_id, data_date_dict, bot: Bot, message):
         await bot.edit_message_text(
             chat_id=message.chat.id,
             message_id=progress_message.message_id,
-            text=f"Идёт поиск сводных дат для записи, это может занять много времени, пожалуйста ожидайте.. ({progress_percent}%)"
+            text=f'Идёт поиск сводных дат для записи, это может занять много времени, пожалуйста ожидайте.. '
+                 f'({progress_percent}%)'
         )
         await asyncio.sleep(1)  # Задержка 1 секунда для соответствия лимитам Telegram
 

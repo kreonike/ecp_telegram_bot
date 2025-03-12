@@ -8,7 +8,7 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 def home_delete(homevisit_id):
     print(homevisit_id)
-    ##авторизация
+    # авторизация
     authorization.authorization()
     session = authorization.authorization()
 

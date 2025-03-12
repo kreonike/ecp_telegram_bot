@@ -23,7 +23,8 @@ def process_time_data(data):
 
 def search_time2(med_staff_fact_id, time_table_graf_beg_time):
     logging.info(
-        f'Поиск доступного времени для MedStaffFact_id: {med_staff_fact_id}, TimeTableGraf_begTime: {time_table_graf_beg_time}')
+        f'Поиск доступного времени для MedStaffFact_id: {med_staff_fact_id}, '
+        f'TimeTableGraf_begTime: {time_table_graf_beg_time}')
 
     # Очистка времени от лишних данных
     time_table_graf_beg_time = time_table_graf_beg_time.partition(' ')[0]

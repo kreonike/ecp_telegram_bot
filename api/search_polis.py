@@ -5,7 +5,7 @@ from config.config import API_ECP
 
 def search_polis(polis):
     print(f' получен полис в функцию search_polis: {polis}')
-    ##авторизация
+    # авторизация
     authorization.authorization()
     session = authorization.authorization()
 

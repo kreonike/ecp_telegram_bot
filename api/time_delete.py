@@ -5,13 +5,13 @@ from config.config import API_ECP
 
 
 def time_delete(TimeTable_id, TimeTableSource):
-    ##авторизация
+    # авторизация
     authorization.authorization()
     session = authorization.authorization()
     print(f' TimeTableSource: {TimeTableSource}')
     # logging.info(f' TimeTableSource {TimeTableSource}')
     FailCause = 1
-    ##удаляем бирку
+    # удаляем бирку
     delete_time = f'{API_ECP}TimeTable?TimeTable_id={TimeTable_id}&TimeTableSource={TimeTableSource}' \
                   f'&FailCause={FailCause}&sess_id={session}'
     result_detele = requests.delete(delete_time)

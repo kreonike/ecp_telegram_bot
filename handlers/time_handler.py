@@ -8,6 +8,8 @@ from keyboards.client_kb import menu_client, kb_client
 from states.states import ClientRequests
 from utils.json_temp_data import save_data_time_final
 
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 

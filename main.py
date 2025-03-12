@@ -44,11 +44,11 @@ session = AiohttpSession(
 
 
 # Инициализация RedisStorage
-#redis_storage = RedisStorage.from_url('redis://95.79.40.128:6379/0')  # Укажите ваш Redis URL
+# redis_storage = RedisStorage.from_url('redis://95.79.40.128:6379/0')  # Укажите ваш Redis URL
 
 # Инициализация бота и диспетчера
 bot = Bot(token=BOT_TOKEN, session=session)
-#dp = Dispatcher(storage=redis_storage)  # Используем RedisStorage
+# dp = Dispatcher(storage=redis_storage)  # Используем RedisStorage
 dp = Dispatcher()
 
 
@@ -94,7 +94,7 @@ dp.message.register(start_handler.start_command, Command('start'))
 dp.message.register(get_history, Command('history'))
 dp.message.register(info_handler.info_command, F.text == 'АДРЕСА И ТЕЛЕФОНЫ')
 dp.message.register(worker_handler.worker_command, F.text == 'РЕЖИМ РАБОТЫ')
-#dp.message.register(person_handler.get_person_polis, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
+# dp.message.register(person_handler.get_person_polis, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
 dp.message.register(po1_handler.polyclinic_1, F.text == 'ПОЛИКЛИНИКА 1')
 dp.message.register(po2_handler.polyclinic_2, F.text == 'ПОЛИКЛИНИКА 2')
 dp.message.register(po3_handler.polyclinic_3, F.text == 'ПОЛИКЛИНИКА 3')
@@ -103,7 +103,7 @@ dp.message.register(get_spec, ClientRequests.spec)
 dp.message.register(get_doctor, ClientRequests.doctor)
 dp.message.register(get_person_time, ClientRequests.time)
 dp.message.register(get_person_polis, ClientRequests.person)
-#dp.message.register(get_delete, ClientRequests.entry_delete)
+# dp.message.register(get_delete, ClientRequests.entry_delete)
 dp.message.register(entry_person, ClientRequests.entry)
 dp.message.register(cancel_handler.cancel_command, F.text == 'ОТМЕНА ЗАПИСИ')
 dp.message.register(cancel_handler.cancel_doctor_command, F.text == 'ОТМЕНА ЗАПИСИ К ВРАЧУ')
@@ -117,19 +117,20 @@ dp.message.register(checking_phone, ClientRequests.phone)
 dp.message.register(checking_reason, ClientRequests.reason)
 dp.message.register(get_person_question, ClientRequests.call_entry_question)
 dp.message.register(call_home, F.text == 'ВЫЗОВ ВРАЧА НА ДОМ')
-#dp.message.register(checking_call_home, ClientRequests.checking_home)
+# dp.message.register(checking_call_home, ClientRequests.checking_home)
 dp.message.register(call_checking_home_handler.checking_call_home, ClientRequests.call_checking)
 dp.message.register(spec_command, F.text == 'ЗАПИСЬ К ВРАЧУ')
 
 dp.message.register(check_doctor_command, F.text == 'ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
 dp.message.register(check_call_command, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
 dp.message.register(check_call_command, ClientRequests.checking_home, F.text == 'ЗАПИСЬ К ВРАЧУ')
-#dp.message.register(ClientRequests.checking)
+# dp.message.register(ClientRequests.checking)
 dp.message.register(person_handler.get_person_polis, ClientRequests.checking)
 dp.message.register(menu_check_entry_command, F.text == 'ПРОВЕРКА ЗАПИСИ')
 dp.message.register(return_to_main_menu_handler.return_to_main_menu, F.text == 'вернуться в меню')
 
 # Обработчик по умолчанию для всех сообщений
+
 @dp.message()
 async def default_handler(message: types.Message):
     logger.debug(f"Сообщение попало в обработчик по умолчанию: {message.text}")

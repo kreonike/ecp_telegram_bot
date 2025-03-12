@@ -1,18 +1,22 @@
 # handlers/history_handler.py
 import logging
+
 from aiogram import types
+
 from database.models import UserMessage
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 async def get_history(message: types.Message):
     try:
-        user_messages = (UserMessage
-                        .select()
-                        .where(UserMessage.user_id == message.from_user.id)
-                        .order_by(UserMessage.timestamp.desc())
-                        .limit(10))
+        user_messages = (UserMessage.
+                         select().
+                         where(UserMessage.user_id == message.from_user.id).
+                         order_by(UserMessage.timestamp.desc()).
+                         # последние 10 сообщений
+                         limit(10))
 
         if not user_messages:
             await message.answer('У вас нет сохранённых сообщений.')

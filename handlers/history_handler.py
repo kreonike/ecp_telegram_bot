@@ -1,4 +1,3 @@
-# handlers/history_handler.py
 import logging
 
 from aiogram import types

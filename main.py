@@ -1,15 +1,14 @@
 import logging
-import datetime
-import os
 
 from aiogram import Bot, Dispatcher, types
 from aiogram import F
 from aiogram.client import telegram
 from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.dispatcher.middlewares.base import BaseMiddleware
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
 
 from config.config import BOT_TOKEN
+from database.models import UserMessage, db
 from handlers import (info_handler, worker_handler, start_handler, person_handler,
                       return_to_main_menu_handler, po1_handler,
                       po2_handler, po3_handler, po4_handler, cancel_handler, call_checking_home_handler)
@@ -25,6 +24,7 @@ from handlers.doctor_handler import get_doctor
 from handlers.entry_delete_handler import get_delete
 from handlers.entry_handler import entry_person
 from handlers.get_person_handler import get_person_polis
+from handlers.history_handler import get_history
 from handlers.menu_call_check_entry_handler import check_call_command
 # from handlers.call_checking_home_handler import checking_call_home
 from handlers.menu_check_enrty_handler import menu_check_entry_command
@@ -32,10 +32,7 @@ from handlers.menu_doctor_check_entry_handler import check_doctor_command
 from handlers.menu_entry_handler import spec_command
 from handlers.spec_handler import get_spec
 from handlers.time_handler import get_person_time
-from keyboards.client_kb import pol_client
 from states.states import ClientRequests
-from peewee import SqliteDatabase, Model, IntegerField, TextField, DateTimeField
-from aiogram.dispatcher.middlewares.base import BaseMiddleware
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -57,27 +54,9 @@ dp = Dispatcher()
 
 
 # Версия и создатель
-version = '7.0.2 release'
+version = '8.4.2 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
-
-# Настройка базы данных
-DATABASE_DIR = 'database'
-if not os.path.exists(DATABASE_DIR):
-    os.makedirs(DATABASE_DIR)
-db = SqliteDatabase(os.path.join(DATABASE_DIR, 'bot_database.db'))
-
-
-class UserMessage(Model):
-    user_id = IntegerField()
-    username = TextField(null=True)
-    first_name = TextField(null=True)
-    message_text = TextField(null=True)
-    message_type = TextField(default="text")
-    timestamp = DateTimeField(default=datetime.datetime.now)
-
-    class Meta:
-        database = db
 
 
 def init_db():
@@ -105,14 +84,16 @@ class MessageLoggingMiddleware(BaseMiddleware):
 
         return await handler(event, data)
 
+
 # Регистрация middleware
 dp.message.middleware(MessageLoggingMiddleware())
 
 
 # Подключение обработчиков
-dp.message.register(start_handler.start_command, Command("start"))
-dp.message.register(info_handler.info_command, F.text == "АДРЕСА И ТЕЛЕФОНЫ")
-dp.message.register(worker_handler.worker_command, F.text == "РЕЖИМ РАБОТЫ")
+dp.message.register(start_handler.start_command, Command('start'))
+dp.message.register(get_history, Command('history'))
+dp.message.register(info_handler.info_command, F.text == 'АДРЕСА И ТЕЛЕФОНЫ')
+dp.message.register(worker_handler.worker_command, F.text == 'РЕЖИМ РАБОТЫ')
 #dp.message.register(person_handler.get_person_polis, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
 dp.message.register(po1_handler.polyclinic_1, F.text == 'ПОЛИКЛИНИКА 1')
 dp.message.register(po2_handler.polyclinic_2, F.text == 'ПОЛИКЛИНИКА 2')

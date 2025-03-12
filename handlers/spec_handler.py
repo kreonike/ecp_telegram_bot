@@ -26,7 +26,7 @@ async def get_spec(message: types.Message, state: FSMContext):
         await message.reply('Выберите раздел', reply_markup=kb_client)
         await state.clear()
         print('Выход из выбора специальности')
-        return  # Прерываем выполнение функции
+        return
 
     data_lpu_person = {}
     spec_final = question_spec.lower()

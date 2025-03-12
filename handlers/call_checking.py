@@ -32,7 +32,7 @@ async def get_person_polis_call(message: types.Message, state: FSMContext):
         person_id = person['data'][0]['Person_id']
         check_entry_data = entry_status.entry_status(person_id)
 
-        from config.config import save_global_person_id
+        from utils.json_temp_data import save_global_person_id
         save_global_person_id(person_id)
 
         PersonSurName_SurName = person['data'][0]['PersonSurName_SurName']

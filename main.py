@@ -54,7 +54,7 @@ dp = Dispatcher()
 
 
 # Версия и создатель
-version = '8.4.2 release'
+version = '8.4.3 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
 

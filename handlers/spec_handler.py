@@ -89,7 +89,12 @@ async def get_spec(message: types.Message, state: FSMContext):
 
     data_lpu_person = [
         item for item in data_lpu_person_old
-        if item.get('RecType_id') == '1' and item.get('TimetableGraf_Count') != '0'
+        if item.get('RecType_id') == '1'
+           and item.get('TimetableGraf_Count') != '0'
+        # исключить козьмину
+           and item.get('MedStaffFact_id') != '520101000139425'
+        # исключить мельникову
+           and item.get('MedStaffFact_id') != '520101000105247'
     ]
     print(f'Отфильтрованные данные: {data_lpu_person}')
 

@@ -14,17 +14,16 @@ async def get_person_polis(message: types.Message, state: FSMContext):
     if message_polis == 'вернуться в меню':
         await state.set_state(ClientRequests.main_menu)
         await message.reply('выберите раздел', reply_markup=kb_client)
-        spec_dict_final = {}
         await state.clear()
     elif len(message_polis) != 16:
         await message.reply('Неверный ввод, введите 16 цифр номера полиса',
                             reply_markup=menu_client)
-    elif message_polis.isdigit() == False:
+    elif not message_polis.isdigit():
         await message.reply('Неверный ввод, вводите только цифры, без символов и пробелов',
                             reply_markup=menu_client)
-    elif message_polis.isdigit() == True:
+    else:
         await message.answer('Идёт поиск, подождите ',
-                               reply_markup=menu_client)
+                             reply_markup=menu_client)
         polis_data = search_polis.search_polis(message_polis)
         print('f 1', polis_data)
         person = search_person.search_person(polis_data['data'][0]['Person_id'])
@@ -34,25 +33,28 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         check_entry_data = entry_status.entry_status(person_id)
         print('f 4', check_entry_data)
 
-        # data = await state.get_data()
-        # message_time = data.get('message_time')
-        time_table_beg_time = check_entry_data['data']['TimeTable'][0]['TimeTable_begTime']
-
-
-        date_whithout_time = time_table_beg_time.partition(' ')[0]
+        # Проверка наличия 'TimeTable'
+        if ('data' in check_entry_data and 'TimeTable' in check_entry_data['data']
+                and check_entry_data['data']['TimeTable']):
+            time_table_beg_time = check_entry_data['data']['TimeTable'][0]['TimeTable_begTime']
+            date_whithout_time = time_table_beg_time.partition(' ')[0]
+        else:
+            # Обработка случая, когда TimeTable отсутствует или пуст
+            await message.reply('Данные о расписании отсутствуют.')
+            time_table_beg_time = None
+            date_whithout_time = None
 
         from utils.json_temp_data import load_postid
         post_id = load_postid()
 
-        # check_error = load_check_error()
-
-        #global check_error
         check_error = 0
 
+        # если TimeTable существует и не пуст
+        if time_table_beg_time:
+            for j in check_entry_data['data']['TimeTable']:
+                if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[0] == date_whithout_time:
+                    check_error = 6
 
-        for j in check_entry_data['data']['TimeTable']:
-            if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[0] == date_whithout_time:
-                check_error = 6
         await state.update_data(person_id=person_id)
         PersonSurName_SurName = person['data'][0]['PersonSurName_SurName']
         PersonFirName_FirName = person['data'][0]['PersonFirName_FirName']

@@ -4,10 +4,11 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 
 from api import search_entry
-from keyboards.client_kb import kb_client, menu_client
+from keyboards.client_kb import kb_client
 from states.states import ClientRequests
 
 logger = logging.getLogger(__name__)
+
 
 async def entry_person(message: types.Message, state: FSMContext):
     message_entry = message.text
@@ -17,9 +18,8 @@ async def entry_person(message: types.Message, state: FSMContext):
         print('вернуться %%%%%%% в главное меню')
         await state.set_state(ClientRequests.main_menu)
         await message.reply('выберите раздел', reply_markup=kb_client)
-        spec_dict_final = {}
+        # spec_dict_final = {}
         await state.clear()
-
 
     elif message_entry == 'ДА':
         from utils.json_temp_data import load_check_error
@@ -41,7 +41,6 @@ async def entry_person(message: types.Message, state: FSMContext):
             time = data.get('time')
             TimeTableGraf_id = data.get('TimeTableGraf_id')
             person_id = data.get('person_id')
-
             print(f' message_time: {time}')
             print(f' TimeTableGraf_id: {TimeTableGraf_id}')
             print(f' person_id: {person_id}')
@@ -49,32 +48,43 @@ async def entry_person(message: types.Message, state: FSMContext):
             entry_data = search_entry.search_entry(person_id, TimeTableGraf_id)
             print(f' entry_data: {entry_data}')
             logging.info(f' ЗАПИСЬ {entry_data}')
-            await message.answer(
-                                   f" ВЫ ЗАПИСАНЫ к:\n"
-                                   f" {entry_data[1]['data']['TimeTable'][0]['Post_name']}"
-                                   f" на: {entry_data[1]['data']['TimeTable'][0]['TimeTable_begTime']}\n"
-                                   f" приходите к назначенному времени сразу к врачу,\n в регистратуру идти не нужно",
-                                   reply_markup=kb_client)
+            # entry_data[0] - entry_date, entry_data[1] - status_date
+            status_date = entry_data[1]
+
+            try:
+                if 'data' in status_date and 'TimeTable' in status_date['data'] and status_date['data']['TimeTable']:
+                    post_name = status_date['data']['TimeTable'][0]['Post_name']
+                    beg_time = status_date['data']['TimeTable'][0]['TimeTable_begTime']
+                    await message.answer(
+                        f" ВЫ ЗАПИСАНЫ к:\n"
+                        f" {post_name}"
+                        f" на: {beg_time}\n"
+                        f" приходите к назначенному времени сразу к врачу,\n в регистратуру идти не нужно",
+                        reply_markup=kb_client
+                    )
+
+                else:
+                    raise KeyError("Неверная структура данных в status_date")
+            except (IndexError, KeyError, TypeError) as e:
+                logging.error(f"Ошибка при обработке entry_data: {e}, entry_data: {entry_data}")
+
+                await message.answer(
+                    "Данных по записи для данного ОМС не найдено.",
+                    reply_markup=kb_client
+                )
 
             await state.set_state(ClientRequests.main_menu)
-            spec_dict_final = {}
+            # spec_dict_final = {}
             await state.clear()
-
-
-        else:
-            await message.answer(
-                                   f' возникла какая-то ошибка, сообщите о пробеме @rapot'
-                                   f' или попытайтесь позже', reply_markup=menu_client)
 
     elif message_entry == 'НЕТ':
 
         await state.set_state(ClientRequests.main_menu)
         await message.answer('выберите раздел',
-                               reply_markup=kb_client)
+                             reply_markup=kb_client)
         spec_dict_final = {}
         await state.clear()
         # await ClientRequests.next()
-
 
     elif message_entry != 'ДА' or message_entry != 'НЕТ' or message_entry != 'вернуться в меню':
         await message.reply('Повторите ввод, ДА или НЕТ нажанием на кнопки или словами')

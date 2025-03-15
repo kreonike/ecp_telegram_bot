@@ -18,7 +18,7 @@ async def start_command(message: types.Message, state: FSMContext):
     else:
         await message.reply(
             f' Добро пожаловать,\n'
-            f' я бот помошник по ГБУЗ НО ГКБ №12\n'
+            f' я бот помощник по ГБУЗ НО ГКБ №12\n'
             f' г.Нижний Новгород, Мочалова, д.8\n'
             f' для получения информации оспользуйтесь кнопками внизу\n'
             f' замечания и предложения: {creator}\n'

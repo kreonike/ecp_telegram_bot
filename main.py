@@ -33,6 +33,7 @@ from handlers.menu_entry_handler import spec_command
 from handlers.spec_handler import get_spec
 from handlers.time_handler import get_person_time
 from states.states import ClientRequests
+from aiogram.fsm.storage.redis import RedisStorage
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)

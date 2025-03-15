@@ -33,11 +33,23 @@ from handlers.menu_entry_handler import spec_command
 from handlers.spec_handler import get_spec
 from handlers.time_handler import get_person_time
 from states.states import ClientRequests
-from aiogram.fsm.storage.redis import RedisStorage
+# from aiogram.fsm.storage.redis import RedisStorage
 
 # Настройка логирования
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+file_handler = logging.FileHandler('ecp.log')
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 session = AiohttpSession(
     api=telegram.TelegramAPIServer.from_base('http://95.79.40.128:8081')
@@ -53,9 +65,8 @@ bot = Bot(token=BOT_TOKEN, session=session)
 dp = Dispatcher()
 
 
-
 # Версия и создатель
-version = '8.4.8 release'
+version = '8.5.1 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
 
@@ -132,10 +143,11 @@ dp.message.register(return_to_main_menu_handler.return_to_main_menu, F.text == '
 
 # Обработчик по умолчанию для всех сообщений
 
+
 @dp.message()
 async def default_handler(message: types.Message):
-    logger.debug(f"Сообщение попало в обработчик по умолчанию: {message.text}")
-    await message.answer("Неверный ввод, выберите на интересующий Вас раздел меню")
+    logger.debug(f'Сообщение попало в обработчик по умолчанию: {message.text}')
+    await message.answer('Неверный ввод, выберите на интересующий Вас раздел меню')
 
 
 async def main():
@@ -170,8 +182,6 @@ if __name__ == '__main__':
 #
 #     else:
 #         print('test')
-
-
 
 
 # async def vu(message: types.Message, state: FSMContext):

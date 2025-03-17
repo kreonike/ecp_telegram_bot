@@ -48,6 +48,7 @@ async def checking(message: types.Message, state: FSMContext):
 
     # Получение данных о записях
     entry_data = entry_status.entry_status(person_id)
+    print(f'entry_data в checking_handler, {entry_data}')
 
     if not entry_data['data']['TimeTable']:
         logger.info("Записей на приём не найдено")

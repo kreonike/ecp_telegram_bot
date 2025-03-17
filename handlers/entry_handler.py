@@ -50,19 +50,18 @@ async def entry_person(message: types.Message, state: FSMContext):
             logging.info(f' ЗАПИСЬ {entry_data}')
             # entry_data[0] - entry_date, entry_data[1] - status_date
             status_date = entry_data[1]
+            print(f' ENTRY:, {status_date}')
 
             try:
                 if 'data' in status_date and 'TimeTable' in status_date['data'] and status_date['data']['TimeTable']:
-                    post_name = status_date['data']['TimeTable'][0]['Post_name']
-                    beg_time = status_date['data']['TimeTable'][0]['TimeTable_begTime']
-                    await message.answer(
-                        f" ВЫ ЗАПИСАНЫ к:\n"
-                        f" {post_name}"
-                        f" на: {beg_time}\n"
-                        f" приходите к назначенному времени сразу к врачу,\n в регистратуру идти не нужно",
-                        reply_markup=kb_client
-                    )
-
+                    response_lines = []
+                    for entry in status_date['data']['TimeTable']:
+                        post_name = entry['Post_name']
+                        beg_time = entry['TimeTable_begTime']
+                        response_lines.append(f"{post_name} на: {beg_time}")
+                    response = "ВЫ ЗАПИСАНЫ к:\n" + "\n".join(
+                        response_lines) + "\nприходите к назначенному времени сразу к врачу,\nв регистратуру идти не нужно"
+                    await message.answer(response, reply_markup=kb_client)
                 else:
                     raise KeyError("Неверная структура данных в status_date")
             except (IndexError, KeyError, TypeError) as e:

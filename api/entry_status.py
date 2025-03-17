@@ -12,5 +12,5 @@ def entry_status(person_id):
     status_entry = f'{API_ECP}TimeTableListbyPatient?Person_id={person_id}&sess_id={session}'
     result_status = requests.get(status_entry)
     status_date = result_status.json()
-    # print(status_date)
+    print(f' в entry_status: {status_date}')
     return status_date

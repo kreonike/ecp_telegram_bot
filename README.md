@@ -32,7 +32,7 @@ api основные запросы:
 
 `curl https://ecp.mznn.ru/api/Refbook?Refbook_Code=dbo.HomeVisitStatus`
 
-доступна база комант от пользователей: bot_database.db
+доступна база команд от пользователей: bot_database.db
 
 	
 ```

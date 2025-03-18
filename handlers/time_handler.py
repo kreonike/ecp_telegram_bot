@@ -30,7 +30,8 @@ async def get_person_time(message: types.Message, state: FSMContext):
         MedStaffFact_id = data.get('MedStaffFact_id')
 
         print(f' message_time в else: {message_time}')
-        data_time_final2 = search_time2.search_time2(MedStaffFact_id, message_time)
+        # Используем await для вызова асинхронной функции
+        data_time_final2 = await search_time2.search_time2(MedStaffFact_id, message_time)
         print(f' data_time_final2: {data_time_final2}')
 
         # Проверка, что введенное время есть в словаре data_time_final2

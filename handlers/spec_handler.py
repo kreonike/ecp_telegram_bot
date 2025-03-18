@@ -84,7 +84,8 @@ async def get_spec(message: types.Message, state: FSMContext):
     base_ecp_spec = base_ecp_medspecoms_id[spec]
     logging.info(f'Запрошена специальность: {base_ecp_spec}')
 
-    data_lpu_person_old = search_spec_doctor.search_spec_doctor(base_ecp_spec, pol)
+    # Используем await для вызова асинхронной функции
+    data_lpu_person_old = await search_spec_doctor.search_spec_doctor(base_ecp_spec, pol)
     print(f'На выходе data_lpu_person_old: {data_lpu_person_old}')
 
     data_lpu_person = [

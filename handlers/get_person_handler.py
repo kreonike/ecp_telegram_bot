@@ -16,7 +16,7 @@ async def validate_polis_input(message_polis: str) -> bool:
 
 
 async def check_existing_entry(person_id: str, post_id: str, date_without_time: str) -> int:
-    check_entry_data = entry_status.entry_status(person_id)
+    check_entry_data = await entry_status.entry_status(person_id)  # Используем await
     check_error = 0
 
     try:
@@ -34,7 +34,7 @@ async def check_existing_entry(person_id: str, post_id: str, date_without_time: 
 
 
 async def get_person_info(person_id: str) -> dict:
-    person = search_person.search_person(person_id)
+    person = await search_person.search_person(person_id)  # Используем await
     return {
         'PersonSurName_SurName': person['data'][0]['PersonSurName_SurName'],
         'PersonFirName_FirName': person['data'][0]['PersonFirName_FirName'],
@@ -60,7 +60,7 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         return
 
     await message.answer('Идёт поиск, подождите...', reply_markup=menu_client)
-    polis_data = search_polis.search_polis(message_polis)
+    polis_data = await search_polis.search_polis(message_polis)  # Используем await
     if not polis_data or not polis_data.get('data'):
         await message.reply('Данные по полису не найдены.', reply_markup=menu_client)
         return

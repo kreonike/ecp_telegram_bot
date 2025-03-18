@@ -25,9 +25,10 @@ async def get_person_question(message: types.Message, state: FSMContext):
 
     elif message_entry == 'ДА':
         await message.answer('Выполняется запрос, ожидайте', reply_markup=kb_client)
-        result_call_entry = entry_home.entry_home(person_id, address_mess, phone_mess, reason_mess)
+        result_call_entry = await entry_home.entry_home(person_id, address_mess, phone_mess, reason_mess)  # Используем await
         logging.info(f' result_call_entry: {result_call_entry}')
-        if result_call_entry['error_code'] == 6:
+
+        if result_call_entry.get('error_code') == 6:  # Используем .get() для безопасного доступа
             await state.set_state(ClientRequests.main_menu)
             await message.answer('У вас уже есть необслуженная запись', reply_markup=kb_client)
             await message.answer('выберите раздел', reply_markup=kb_client)

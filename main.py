@@ -11,7 +11,7 @@ from config.config import BOT_TOKEN
 from database.models import UserMessage, db
 from handlers import (info_handler, worker_handler, start_handler, person_handler,
                       return_to_main_menu_handler, po1_handler,
-                      po2_handler, po3_handler, po4_handler, cancel_handler, call_checking_home_handler)
+                      po2_handler, po3_handler, po4_handler, cancel_handler)
 from handlers.call_address import checking_address
 from handlers.call_checking import get_person_polis_call
 from handlers.call_entry import get_person
@@ -33,6 +33,7 @@ from handlers.menu_entry_handler import spec_command
 from handlers.spec_handler import get_spec
 from handlers.time_handler import get_person_time
 from handlers.checking_handler import checking
+from handlers.call_checking_home_handler import checking_call_home
 from states.states import ClientRequests
 # from aiogram.fsm.storage.redis import RedisStorage
 
@@ -67,7 +68,7 @@ dp = Dispatcher()
 
 
 # Версия и создатель
-version = '8.5.2 release'
+version = '8.5.3 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
 
@@ -131,13 +132,14 @@ dp.message.register(checking_reason, ClientRequests.reason)
 dp.message.register(get_person_question, ClientRequests.call_entry_question)
 dp.message.register(call_home, F.text == 'ВЫЗОВ ВРАЧА НА ДОМ')
 # dp.message.register(checking_call_home, ClientRequests.checking_home)
-dp.message.register(call_checking_home_handler.checking_call_home, ClientRequests.call_checking)
+dp.message.register(checking_call_home, ClientRequests.call_checking)
 dp.message.register(spec_command, F.text == 'ЗАПИСЬ К ВРАЧУ')
 
 dp.message.register(check_doctor_command, F.text == 'ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
 dp.message.register(check_call_command, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
-dp.message.register(check_call_command, ClientRequests.checking_home, F.text == 'ЗАПИСЬ К ВРАЧУ')
+#dp.message.register(check_call_command, ClientRequests.checking_home, F.text == 'ЗАПИСЬ К ВРАЧУ')
 dp.message.register(checking, ClientRequests.checking)
+dp.message.register(checking_call_home, ClientRequests.checking_home)
 dp.message.register(person_handler.get_person_polis, ClientRequests.checking)
 dp.message.register(menu_check_entry_command, F.text == 'ПРОВЕРКА ЗАПИСИ')
 dp.message.register(return_to_main_menu_handler.return_to_main_menu, F.text == 'вернуться в меню')

@@ -4,14 +4,13 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 
 from api import time_delete
-# from main import spec_check
 from handlers.return_to_main_menu_handler import return_to_main_menu
 from keyboards.client_kb import kb_client, menu_client
 
 logger = logging.getLogger(__name__)
 
 
-def del_entry(message_delete, entry_data):
+async def del_entry(message_delete, entry_data):
     print(message_delete)
     print(entry_data)
     del_error = ''
@@ -19,10 +18,10 @@ def del_entry(message_delete, entry_data):
         if key['TimeTable_id'] == message_delete:
             print('TimeTable_id = message_delete')
             TimeTableSource = 'Graf'
-            status_del = time_delete.time_delete(message_delete, TimeTableSource)
+            status_del = await time_delete.time_delete(message_delete, TimeTableSource)  # Используем await
             print(f' status_del: ! {status_del}')
 
-            if status_del['data'] == []:
+            if status_del.get('data') == []:  # Используем .get() для безопасного доступа
                 print('done')
                 del_error = '0'
                 return del_error
@@ -32,8 +31,6 @@ def del_entry(message_delete, entry_data):
             del_error = '6'
             print(del_error)
             return del_error
-
-
 
 
 async def get_delete(message: types.Message, state: FSMContext):
@@ -54,7 +51,7 @@ async def get_delete(message: types.Message, state: FSMContext):
     # Отмена записи
     data = await state.get_data()
     entry_data = data.get('entry_data_delete')
-    del_status = del_entry(message_delete, entry_data)
+    del_status = await del_entry(message_delete, entry_data)  # Используем await
     logger.info(f"Результат отмены записи: {del_status}")
 
     if del_status == '0':

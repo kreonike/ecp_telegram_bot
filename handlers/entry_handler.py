@@ -52,36 +52,40 @@ async def entry_person(message: types.Message, state: FSMContext):
 
         elif check_error == 0:
             # Выполняем запись
-            entry_data = search_entry.search_entry(person_id, TimeTableGraf_id)
+            entry_data = await search_entry.search_entry(person_id, TimeTableGraf_id)  # Используем await
             logger.info(f"Результат search_entry: {entry_data}")
 
             # Проверка результата API
-            if isinstance(entry_data, dict) and 'error_code' in entry_data and entry_data['error_code'] != 0:
-                logger.error(f"Ошибка API: {entry_data.get('error_msg', 'Неизвестная ошибка')}")
-                await message.reply(f"Ошибка при записи: {entry_data.get('error_msg', 'Попробуйте позже.')}")
-                await state.set_state(ClientRequests.main_menu)
-                await message.reply('Выберите раздел', reply_markup=kb_client)
-                await state.clear()
-                return
+            if isinstance(entry_data, tuple) and len(entry_data) == 2:
+                entry_date, status_date = entry_data
+                if isinstance(entry_date, dict) and 'error_code' in entry_date and entry_date['error_code'] != 0:
+                    logger.error(f"Ошибка API: {entry_date.get('error_msg', 'Неизвестная ошибка')}")
+                    await message.reply(f"Ошибка при записи: {entry_date.get('error_msg', 'Попробуйте позже.')}")
+                    await state.set_state(ClientRequests.main_menu)
+                    await message.reply('Выберите раздел', reply_markup=kb_client)
+                    await state.clear()
+                    return
 
-            # Обработка успешного результата
-            try:
-                status_date = entry_data[1]  # Предполагаем, что entry_data[1] - это status_date
-                if ('data' in status_date and 'TimeTable' in status_date['data']
-                        and status_date['data']['TimeTable']):
-                    response_lines = []
-                    for entry in status_date['data']['TimeTable']:
-                        post_name = entry['Post_name']
-                        beg_time = entry['TimeTable_begTime']
-                        response_lines.append(f"{post_name} на: {beg_time}")
-                    response = ("ВЫ ЗАПИСАНЫ к:\n" + "\n".join(response_lines) +
-                                "\nПриходите к назначенному времени сразу к врачу,\nв регистратуру идти не нужно")
-                    await message.answer(response, reply_markup=kb_client)
-                else:
-                    raise KeyError("Отсутствуют данные о записи в ответе API")
-            except (IndexError, KeyError, TypeError) as e:
-                logger.error(f"Ошибка обработки entry_data: {e}, данные: {entry_data}")
-                await message.answer("Данных по записи не найдено.", reply_markup=kb_client)
+                # Обработка успешного результата
+                try:
+                    if ('data' in status_date and 'TimeTable' in status_date['data']
+                            and status_date['data']['TimeTable']):
+                        response_lines = []
+                        for entry in status_date['data']['TimeTable']:
+                            post_name = entry['Post_name']
+                            beg_time = entry['TimeTable_begTime']
+                            response_lines.append(f"{post_name} на: {beg_time}")
+                        response = ("ВЫ ЗАПИСАНЫ к:\n" + "\n".join(response_lines) +
+                                    "\nПриходите к назначенному времени сразу к врачу,\nв регистратуру идти не нужно")
+                        await message.answer(response, reply_markup=kb_client)
+                    else:
+                        raise KeyError("Отсутствуют данные о записи в ответе API")
+                except (KeyError, TypeError) as e:
+                    logger.error(f"Ошибка обработки status_date: {e}, данные: {status_date}")
+                    await message.answer("Данных по записи не найдено.", reply_markup=kb_client)
+            else:
+                logger.error(f"Некорректный формат данных от search_entry: {entry_data}")
+                await message.answer("Ошибка при обработке данных записи.", reply_markup=kb_client)
 
             await state.set_state(ClientRequests.main_menu)
             await state.clear()

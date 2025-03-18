@@ -35,7 +35,7 @@ from handlers.time_handler import get_person_time
 from handlers.checking_handler import checking
 from handlers.call_checking_home_handler import checking_call_home
 from states.states import ClientRequests
-# from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.fsm.storage.redis import RedisStorage
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ dp = Dispatcher()
 
 
 # Версия и создатель
-version = '8.5.3 release'
+version = '8.5.4 release'
 creator = '@rapot'
 bot_birthday = '13.10.2022 15:14'
 

@@ -9,6 +9,8 @@ from handlers import base_ecp
 from keyboards.client_kb import kb_client
 from states.states import ClientRequests
 
+from config.config import EXCLUDED_DOCTORS  # Импортируем список врачей для исключения
+
 logger = logging.getLogger(__name__)
 
 
@@ -92,10 +94,7 @@ async def get_spec(message: types.Message, state: FSMContext):
         item for item in data_lpu_person_old
         if item.get('RecType_id') == '1'
            and item.get('TimetableGraf_Count') != '0'
-        # исключить козьмину
-           and item.get('MedStaffFact_id') != '520101000139425'
-        # исключить мельникову
-           and item.get('MedStaffFact_id') != '520101000105247'
+           and item.get('MedStaffFact_id') not in EXCLUDED_DOCTORS  # Используем список исключений
     ]
     print(f'Отфильтрованные данные: {data_lpu_person}')
 

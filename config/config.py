@@ -12,3 +12,11 @@ LOGIN_ECP = os.getenv('LOGIN_ECP')
 PASSWORD_ECP = os.getenv('PASSWORD_ECP')
 
 API_ECP = 'https://ecp.mznn.ru/api/'
+
+# Список исключаемых врачей
+EXCLUDED_DOCTORS = [
+    '520101000139425',  # ID Козьминой
+    '520101000105247',  # ID Мельниковой
+    '520101000134439',  # ID Самолюк
+    '520101000131292',  # ID Самолюк
+]

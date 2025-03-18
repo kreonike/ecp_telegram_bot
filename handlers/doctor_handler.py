@@ -42,7 +42,8 @@ async def get_doctor(message: types.Message, state: FSMContext):
                 await state.update_data(MedStaffFact_id=MedStaffFact_id)
 
                 """поиск даты"""
-                data_date_dict = search_date.search_date(MedStaffFact_id)
+                # Используем await для вызова асинхронной функции
+                data_date_dict = await search_date.search_date(MedStaffFact_id)
                 print(f' это дата лист из функции: {data_date_dict}')
 
                 from main import bot
@@ -69,5 +70,4 @@ async def get_doctor(message: types.Message, state: FSMContext):
             else:
                 await message.answer('Неверный ввод, введите имя врача, либо нажмите кнопку в меню')
     finally:
-
         await state.update_data(is_processing=False)

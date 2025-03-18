@@ -30,7 +30,7 @@ async def checking(message: types.Message, state: FSMContext):
 
     # Поиск данных по полису
     logger.info("Поиск данных по полису...")
-    polis_data = search_polis.search_polis(mess)
+    polis_data = await search_polis.search_polis(mess)  # Используем await
 
     if not polis_data['data']:
         logger.warning("Полис не найден")
@@ -39,7 +39,7 @@ async def checking(message: types.Message, state: FSMContext):
 
     # Получение данных о человеке
     person_id = polis_data['data'][0]['Person_id']
-    person_data = search_person.search_person(person_id)
+    person_data = await search_person.search_person(person_id)  # Используем await
 
     if not person_data['data']:
         logger.error("Данные о человеке не найдены")
@@ -47,7 +47,8 @@ async def checking(message: types.Message, state: FSMContext):
         return
 
     # Получение данных о записях
-    entry_data = entry_status.entry_status(person_id)
+    entry_data = await entry_status.entry_status(person_id)  # Используем await
+    print(f'entry_data в checking_handler, {entry_data}')
 
     if not entry_data['data']['TimeTable']:
         logger.info("Записей на приём не найдено")

@@ -1,20 +1,17 @@
 import logging
-from config.config import BOT_TOKEN, LOGIN_ECP, PASSWORD_ECP
-import requests
+import aiohttp
+from config.config import LOGIN_ECP, PASSWORD_ECP
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
-
-def authorization():
+async def authorization():
     login = LOGIN_ECP
     password = PASSWORD_ECP
-    link = 'https://ecp.mznn.ru/api/user/login' + '?Login=' + login + '&Password=' + password
+    link = f'https://ecp.mznn.ru/api/user/login?Login={login}&Password={password}'
 
-    responce = requests.get(link)
-    data_session = responce.json()
-    session = data_session['sess_id']
-
-    return session
-
-
-logging.info(f' authorization {authorization()}')
+    async with aiohttp.ClientSession() as session:
+        async with session.get(link) as response:
+            data_session = await response.json()
+            session_id = data_session['sess_id']
+            logging.info(f'Authorization successful, session ID: {session_id}')
+            return session_id

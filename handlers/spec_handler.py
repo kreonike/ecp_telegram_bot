@@ -26,7 +26,7 @@ async def get_spec(message: types.Message, state: FSMContext):
         await message.reply('Выберите раздел', reply_markup=kb_client)
         await state.clear()
         print('Выход из выбора специальности')
-        return  # Прерываем выполнение функции
+        return
 
     data_lpu_person = {}
     spec_final = question_spec.lower()
@@ -84,12 +84,18 @@ async def get_spec(message: types.Message, state: FSMContext):
     base_ecp_spec = base_ecp_medspecoms_id[spec]
     logging.info(f'Запрошена специальность: {base_ecp_spec}')
 
-    data_lpu_person_old = search_spec_doctor.search_spec_doctor(base_ecp_spec, pol)
+    # Используем await для вызова асинхронной функции
+    data_lpu_person_old = await search_spec_doctor.search_spec_doctor(base_ecp_spec, pol)
     print(f'На выходе data_lpu_person_old: {data_lpu_person_old}')
 
     data_lpu_person = [
         item for item in data_lpu_person_old
-        if item.get('RecType_id') == '1' and item.get('TimetableGraf_Count') != '0'
+        if item.get('RecType_id') == '1'
+           and item.get('TimetableGraf_Count') != '0'
+        # исключить козьмину
+           and item.get('MedStaffFact_id') != '520101000139425'
+        # исключить мельникову
+           and item.get('MedStaffFact_id') != '520101000105247'
     ]
     print(f'Отфильтрованные данные: {data_lpu_person}')
 

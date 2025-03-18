@@ -1,5 +1,5 @@
 import logging
-import requests
+import aiohttp
 from aiogram import Bot
 from tqdm import tqdm
 from api import authorization
@@ -8,50 +8,28 @@ import asyncio
 
 # Константы
 ALLOWED_TIMETABLE_TYPES = {'1', '4', '10', '11'}
-####
-###
-#https://ecp.mznn.ru/api/Refbook?Refbook_Code=dbo.TimeTableType
-# 1: "Обычная"
-# 2: "Резервная"
-# 3: "Платная"
-# 4: "ЦЗ"
-# 5: "По направлению"
-# 6: "Экстренная"
-# 7: "Койки ЧС"
-# 8: "Для врачей своей МО"
-# 9: "Запись через инфомат"
-# 10: "Через регистратуру МО"
-# 11: "Для интернета"
-# 12: "Живая очередь"
-# 13: "Видеосвязь"
-# 14: "Групповой прием"
-# 15:
-# 16:
-# 17:
-# 18: "Диспансерный учёт"
-# 19: "ТМК"
-###
-####
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 async def fetch_available_times(med_staff_fact_id, beg_time, session):
     url = f'{API_ECP}TimeTableGraf/TimeTableGrafFreeTime?MedStaffFact_id={med_staff_fact_id}&TimeTableGraf_begTime={beg_time}&sess_id={session}'
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
+        async with aiohttp.ClientSession() as client:
+            async with client.get(url) as response:
+                response.raise_for_status()
+                return await response.json()
+    except aiohttp.ClientError as e:
         logging.error(f'Ошибка при получении доступного времени: {e}')
         raise
 
 async def fetch_timetable_details(time_table_graf_id, session):
     url = f'{API_ECP}TimeTableGraf/TimeTableGrafById?TimeTableGraf_id={time_table_graf_id}&sess_id={session}'
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
+        async with aiohttp.ClientSession() as client:
+            async with client.get(url) as response:
+                response.raise_for_status()
+                return await response.json()
+    except aiohttp.ClientError as e:
         logging.error(f'Ошибка при получении деталей расписания: {e}')
         raise
 
@@ -62,7 +40,7 @@ async def search_time(med_staff_fact_id, data_date_dict, bot: Bot, message):
     logging.info(f'Поиск доступного времени для MedStaffFact_id: {med_staff_fact_id}')
 
     # Авторизация
-    session = authorization.authorization()
+    session = await authorization.authorization()
 
     # Извлечение времени начала
     beg_time_list = [key['TimeTableGraf_begTime'] for key in data_date_dict.get('data', [])]
@@ -95,7 +73,8 @@ async def search_time(med_staff_fact_id, data_date_dict, bot: Bot, message):
         await bot.edit_message_text(
             chat_id=message.chat.id,
             message_id=progress_message.message_id,
-            text=f"Идёт поиск сводных дат для записи, это может занять много времени, пожалуйста ожидайте.. ({progress_percent}%)"
+            text=f'Идёт поиск сводных дат для записи, это может занять много времени, пожалуйста ожидайте.. '
+                 f'({progress_percent}%)'
         )
         await asyncio.sleep(1)  # Задержка 1 секунда для соответствия лимитам Telegram
 

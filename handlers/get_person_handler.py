@@ -8,30 +8,40 @@ from utils.json_temp_data import load_postid, save_check_error
 
 logger = logging.getLogger(__name__)
 
+
 async def validate_polis_input(message_polis: str) -> bool:
     if len(message_polis) != 16 or not message_polis.isdigit():
         return False
     return True
 
+
 async def check_existing_entry(person_id: str, post_id: str, date_without_time: str) -> int:
-    check_entry_data = entry_status.entry_status(person_id)
+    check_entry_data = await entry_status.entry_status(person_id)  # Используем await
     check_error = 0
-    for j in check_entry_data['data']['TimeTable']:
-        if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[0] == date_without_time:
-            logger.info('Найдено совпадение: запись к одному и тому же специалисту на один и тот же день запрещена')
-            check_error = 6
-            break
+
+    try:
+        timetable = check_entry_data.get('data', {}).get('TimeTable', [])
+        for j in timetable:
+            if j['Post_id'] == post_id and j['TimeTable_begTime'].partition(' ')[0] == date_without_time:
+                logger.info('Найдено совпадение: запись к одному и тому же специалисту на один и тот же день запрещена')
+                check_error = 6
+                break
+    except (TypeError, AttributeError, KeyError) as e:
+        logger.error(f"Ошибка при проверке записи: {e}, данные: {check_entry_data}")
+
     save_check_error(check_error)
     return check_error
 
+
 async def get_person_info(person_id: str) -> dict:
-    person = search_person.search_person(person_id)
+    person = await search_person.search_person(person_id)  # Используем await
     return {
         'PersonSurName_SurName': person['data'][0]['PersonSurName_SurName'],
         'PersonFirName_FirName': person['data'][0]['PersonFirName_FirName'],
         'PersonSecName_SecName': person['data'][0]['PersonSecName_SecName'],
         'PersonBirthDay_BirthDay': person['data'][0]['PersonBirthDay_BirthDay']
     }
+
 
 async def get_person_polis(message: types.Message, state: FSMContext):
     message_polis = message.text
@@ -45,11 +55,12 @@ async def get_person_polis(message: types.Message, state: FSMContext):
         return
 
     if not await validate_polis_input(message_polis):
-        await message.reply('Неверный ввод. Введите 16 цифр номера полиса без символов и пробелов.', reply_markup=menu_client)
+        await message.reply('Неверный ввод. Введите 16 цифр номера полиса без символов и пробелов.',
+                            reply_markup=menu_client)
         return
 
     await message.answer('Идёт поиск, подождите...', reply_markup=menu_client)
-    polis_data = search_polis.search_polis(message_polis)
+    polis_data = await search_polis.search_polis(message_polis)  # Используем await
     if not polis_data or not polis_data.get('data'):
         await message.reply('Данные по полису не найдены.', reply_markup=menu_client)
         return
@@ -64,7 +75,8 @@ async def get_person_polis(message: types.Message, state: FSMContext):
 
     check_error = await check_existing_entry(person_id, post_id, date_without_time)
     if check_error == 6:
-        await message.reply('Запись к одному и тому же специалисту на один и тот же день запрещена.', reply_markup=menu_client)
+        await message.reply('Запись к одному и тому же специалисту на один и тот же день запрещена.',
+                            reply_markup=menu_client)
         return
 
     await state.update_data(person_id=person_id)

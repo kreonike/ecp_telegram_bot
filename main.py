@@ -32,6 +32,7 @@ from handlers.menu_doctor_check_entry_handler import check_doctor_command
 from handlers.menu_entry_handler import spec_command
 from handlers.spec_handler import get_spec
 from handlers.time_handler import get_person_time
+from handlers.checking_handler import checking
 from states.states import ClientRequests
 # from aiogram.fsm.storage.redis import RedisStorage
 
@@ -136,7 +137,7 @@ dp.message.register(spec_command, F.text == 'ЗАПИСЬ К ВРАЧУ')
 dp.message.register(check_doctor_command, F.text == 'ПРОВЕРКА ЗАПИСИ К ВРАЧУ')
 dp.message.register(check_call_command, F.text == 'ПРОВЕРКА ВЫЗОВА ВРАЧА НА ДОМ')
 dp.message.register(check_call_command, ClientRequests.checking_home, F.text == 'ЗАПИСЬ К ВРАЧУ')
-# dp.message.register(ClientRequests.checking)
+dp.message.register(checking, ClientRequests.checking)
 dp.message.register(person_handler.get_person_polis, ClientRequests.checking)
 dp.message.register(menu_check_entry_command, F.text == 'ПРОВЕРКА ЗАПИСИ')
 dp.message.register(return_to_main_menu_handler.return_to_main_menu, F.text == 'вернуться в меню')
